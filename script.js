@@ -254,7 +254,7 @@ function cycleView() {
                 view.style.transform = `translateY(${offset}vh)`;
                 
                 setTimeout(() => {
-                    view.style.transition = 'transform 500ms ease-in-out';
+                    view.style.transition = 'transform 350ms ease-in-out';
                     view.style.opacity = '1';
                 }, 50);
             }
@@ -264,7 +264,7 @@ function cycleView() {
         setTimeout(() => {
             isAnimating = false;
         }, hasRepositioned ? 50 : 0);
-    }, 500);
+    }, 350);
 }
 
 // Editor UI handlers
