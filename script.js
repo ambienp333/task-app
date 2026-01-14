@@ -237,16 +237,13 @@ function cycleView() {
     updatePositions();
     updateBackgroundColor();
     
-    // Always unlock after full animation completes
     setTimeout(() => {
-        isAnimating = false;
-    }, 550);
-    
-    setTimeout(() => {
+        let hasRepositioned = false;
         views.forEach((view, index) => {
             const position = viewPositions[index];
             
             if (position < currentViewIndex - 2) {
+                hasRepositioned = true;
                 view.style.transition = 'none';
                 view.style.opacity = '0';
                 
@@ -262,6 +259,11 @@ function cycleView() {
                 }, 50);
             }
         });
+        
+        // Unlock after repositioning completes (or immediately if no repositioning)
+        setTimeout(() => {
+            isAnimating = false;
+        }, hasRepositioned ? 50 : 0);
     }, 500);
 }
 
