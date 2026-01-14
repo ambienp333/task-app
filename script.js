@@ -15,6 +15,7 @@ let tasks = {
 };
 
 let currentViewIndex = 0;
+let isAnimating = false;
 const views = Array.from({length: 6}, (_, i) => document.getElementById(`view-${i}`));
 const viewPositions = [0, 1, 2, 3, 4, 5];
 const backgroundLayer = document.getElementById('background-layer');
@@ -229,6 +230,9 @@ function updatePositions() {
 
 // Cycle to next view
 function cycleView() {
+    if (isAnimating) return;
+    isAnimating = true;
+    
     currentViewIndex++;
     updatePositions();
     updateBackgroundColor();
@@ -250,7 +254,11 @@ function cycleView() {
                 setTimeout(() => {
                     view.style.transition = 'transform 500ms ease-in-out';
                     view.style.opacity = '1';
+                    isAnimating = false;
                 }, 50);
+            } else {
+                // Re-enable animation after timeout even if no repositioning happened
+                isAnimating = false;
             }
         });
     }, 500);
