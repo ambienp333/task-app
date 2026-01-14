@@ -21,9 +21,9 @@ const viewPositions = [0, 1, 2, 3, 4, 5];
 const backgroundLayer = document.getElementById('background-layer');
 
 const backgroundColors = {
-    'active': '#1f1e1e',
-    'recurring': '#211e1f',
-    'done': '#231e1e'
+    'active': '#1e1e1f',
+    'recurring': '#251e21',
+    'done': '#2d1e1e'
 };
 
 // UI Elements
