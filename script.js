@@ -16,6 +16,7 @@ let tasks = {
 
 let currentViewIndex = 0;
 let isAnimating = false;
+let queuedSwipe = false;
 const views = Array.from({length: 6}, (_, i) => document.getElementById(`view-${i}`));
 const viewPositions = [0, 1, 2, 3, 4, 5];
 const backgroundLayer = document.getElementById('background-layer');
@@ -230,8 +231,14 @@ function updatePositions() {
 
 // Cycle to next view
 function cycleView() {
-    if (isAnimating) return;
+    if (isAnimating) {
+        // If already animating, queue ONE swipe
+        queuedSwipe = true;
+        return;
+    }
+    
     isAnimating = true;
+    queuedSwipe = false;
     
     currentViewIndex++;
     updatePositions();
@@ -260,9 +267,13 @@ function cycleView() {
             }
         });
         
-        // Unlock after repositioning completes (or immediately if no repositioning)
         setTimeout(() => {
             isAnimating = false;
+            
+            // Execute queued swipe if one exists
+            if (queuedSwipe) {
+                cycleView();
+            }
         }, hasRepositioned ? 50 : 0);
     }, 350);
 }
