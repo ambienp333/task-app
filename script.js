@@ -49,6 +49,25 @@ const cancelAddBtn = document.getElementById('cancel-add-btn');
 const closeManageBtn = document.getElementById('close-manage-btn');
 const clockElement = document.getElementById('clock');
 
+// Edit Task UI Elements
+const editTaskOverlay = document.getElementById('edit-task-overlay');
+const editTaskNameInput = document.getElementById('edit-task-name-input');
+const editUrgentCheckbox = document.getElementById('edit-urgent-checkbox');
+const editColorSelectContainer = document.getElementById('edit-color-select-container');
+const editColorSelect = document.getElementById('edit-color-select');
+const editTemporaryCheckbox = document.getElementById('edit-temporary-checkbox');
+const editRecurringCheckbox = document.getElementById('edit-recurring-checkbox');
+const editAllDaysCheckbox = document.getElementById('edit-all-days-checkbox');
+const editDaysSelectContainer = document.getElementById('edit-days-select-container');
+const editAllTimeCheckbox = document.getElementById('edit-all-time-checkbox');
+const editTimeSelectContainer = document.getElementById('edit-time-select-container');
+const editStartTimeInput = document.getElementById('edit-start-time-input');
+const editEndTimeInput = document.getElementById('edit-end-time-input');
+const saveEditBtn = document.getElementById('save-edit-btn');
+const cancelEditBtn = document.getElementById('cancel-edit-btn');
+
+let currentEditingTaskId = null;
+
 // Denver timezone utilities
 function getDenverTime() {
     const formatter = new Intl.DateTimeFormat('en-US', {
@@ -488,6 +507,76 @@ closeManageBtn.addEventListener('click', () => {
     manageTasksOverlay.classList.add('hidden');
 });
 
+editUrgentCheckbox.addEventListener('change', () => {
+    editColorSelectContainer.style.display = editUrgentCheckbox.checked ? 'none' : 'block';
+});
+
+editAllDaysCheckbox.addEventListener('change', () => {
+    editDaysSelectContainer.style.display = editAllDaysCheckbox.checked ? 'none' : 'block';
+});
+
+editAllTimeCheckbox.addEventListener('change', () => {
+    editTimeSelectContainer.style.display = editAllTimeCheckbox.checked ? 'none' : 'block';
+});
+
+saveEditBtn.addEventListener('click', async () => {
+    if (!currentEditingTaskId) return;
+    
+    const name = editTaskNameInput.value.trim();
+    if (!name) return;
+    
+    const isUrgent = editUrgentCheckbox.checked;
+    const category = isUrgent ? 'urgent' : editColorSelect.value;
+    
+    const isTemporary = editTemporaryCheckbox.checked;
+    const isRecurring = editRecurringCheckbox.checked;
+    const isDailyReset = isTemporary && isRecurring;
+    
+    // Determine type and list_type
+    let type, list_type;
+    if (isDailyReset) {
+        type = 'recurring';
+        list_type = 'active';
+    } else if (isRecurring) {
+        type = 'recurring';
+        list_type = 'recurring';
+    } else {
+        type = 'oneoff';
+        list_type = 'active';
+    }
+    
+    const days_enabled = editAllDaysCheckbox.checked;
+    const days = days_enabled ? ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] : 
+        Array.from(document.querySelectorAll('input[name="edit-day"]:checked')).map(el => el.value);
+    
+    const time_enabled = editAllTimeCheckbox.checked;
+    const start_time = time_enabled ? null : editStartTimeInput.value;
+    const end_time = time_enabled ? null : editEndTimeInput.value;
+    
+    await updateTask(currentEditingTaskId, {
+        name: name,
+        category: category,
+        type: type,
+        list_type: list_type,
+        daily_reset: isDailyReset,
+        days_enabled: days_enabled,
+        days: days,
+        time_enabled: time_enabled,
+        start_time: start_time,
+        end_time: end_time
+    });
+    
+    currentEditingTaskId = null;
+    editTaskOverlay.classList.add('hidden');
+    await renderAllViews();
+    await renderManageTasksList();
+});
+
+cancelEditBtn.addEventListener('click', () => {
+    currentEditingTaskId = null;
+    editTaskOverlay.classList.add('hidden');
+});
+
 // Render manage tasks list
 async function renderManageTasksList() {
     await loadTasks();
@@ -529,9 +618,54 @@ async function renderManageTasksList() {
             ${completionText}
             <p>Days: ${daysText}</p>
             <p>Time: ${timeText}</p>
+            <button class="secondary-btn edit-task-btn" data-id="${task.id}">Edit</button>
             <button class="secondary-btn delete-task-btn" data-id="${task.id}">Delete</button>
         `;
         container.appendChild(item);
+    });
+    
+    // Add edit handlers
+    document.querySelectorAll('.edit-task-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const taskId = e.target.dataset.id;
+            const task = allTasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            // Populate edit form
+            currentEditingTaskId = taskId;
+            editTaskNameInput.value = task.name;
+            editUrgentCheckbox.checked = task.category === 'urgent';
+            editColorSelectContainer.style.display = task.category === 'urgent' ? 'none' : 'block';
+            editColorSelect.value = task.category === 'urgent' ? 'fitness' : task.category;
+            
+            // Set type checkboxes based on task
+            if (task.daily_reset) {
+                editTemporaryCheckbox.checked = true;
+                editRecurringCheckbox.checked = true;
+            } else if (task.type === 'recurring') {
+                editTemporaryCheckbox.checked = false;
+                editRecurringCheckbox.checked = true;
+            } else {
+                editTemporaryCheckbox.checked = true;
+                editRecurringCheckbox.checked = false;
+            }
+            
+            editAllDaysCheckbox.checked = task.days_enabled;
+            editDaysSelectContainer.style.display = task.days_enabled ? 'none' : 'block';
+            
+            // Set day checkboxes
+            document.querySelectorAll('input[name="edit-day"]').forEach(checkbox => {
+                checkbox.checked = task.days.includes(checkbox.value);
+            });
+            
+            editAllTimeCheckbox.checked = task.time_enabled;
+            editTimeSelectContainer.style.display = task.time_enabled ? 'none' : 'block';
+            editStartTimeInput.value = task.start_time || '';
+            editEndTimeInput.value = task.end_time || '';
+            
+            // Show edit overlay
+            editTaskOverlay.classList.remove('hidden');
+        });
     });
     
     // Add delete handlers
@@ -562,7 +696,10 @@ document.addEventListener('touchend', (e) => {
 
 // Keyboard
 document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' && addTaskOverlay.classList.contains('hidden') && manageTasksOverlay.classList.contains('hidden')) {
+    if (e.code === 'Space' && 
+        addTaskOverlay.classList.contains('hidden') && 
+        manageTasksOverlay.classList.contains('hidden') &&
+        editTaskOverlay.classList.contains('hidden')) {
         e.preventDefault();
         cycleView();
     }
