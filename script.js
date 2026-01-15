@@ -49,7 +49,26 @@ const clockElement = document.getElementById('clock');
 
 // Denver timezone utilities
 function getDenverTime() {
-    return new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Denver' }));
+    const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Denver',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    });
+    
+    const parts = formatter.formatToParts(new Date());
+    const values = {};
+    parts.forEach(part => {
+        if (part.type !== 'literal') {
+            values[part.type] = parseInt(part.value);
+        }
+    });
+    
+    return new Date(values.year, values.month - 1, values.day, values.hour, values.minute, values.second);
 }
 
 function getDenverDayOfWeek() {
@@ -123,7 +142,6 @@ async function saveTask(task) {
 // Update task in Supabase
 async function updateTask(taskId, updates) {
     const { error } = await supabaseClient
-        .from('tasks')
         .update(updates)
         .eq('id', taskId)
         .eq('user_id', userId);
