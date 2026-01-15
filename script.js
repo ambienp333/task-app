@@ -35,6 +35,8 @@ const taskNameInput = document.getElementById('task-name-input');
 const urgentCheckbox = document.getElementById('urgent-checkbox');
 const colorSelectContainer = document.getElementById('color-select-container');
 const colorSelect = document.getElementById('color-select');
+const temporaryCheckbox = document.getElementById('temporary-checkbox');
+const recurringCheckbox = document.getElementById('recurring-checkbox');
 const allDaysCheckbox = document.getElementById('all-days-checkbox');
 const daysSelectContainer = document.getElementById('days-select-container');
 const allTimeCheckbox = document.getElementById('all-time-checkbox');
@@ -69,6 +71,14 @@ function getDenverTime() {
     });
     
     return new Date(values.year, values.month - 1, values.day, values.hour, values.minute, values.second);
+}
+
+function getDenverDateString() {
+    const time = getDenverTime();
+    const year = time.getFullYear();
+    const month = String(time.getMonth() + 1).padStart(2, '0');
+    const day = String(time.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 function getDenverDayOfWeek() {
@@ -165,6 +175,67 @@ async function deleteTask(taskId) {
     }
 }
 
+// Check and reset daily tasks at midnight
+async function checkDailyTaskResets() {
+    const currentDate = getDenverDateString();
+    
+    // Find all daily reset tasks in recurring list
+    const dailyTasksToReset = tasks.recurring.filter(task => 
+        task.daily_reset && 
+        task.last_completed_date && 
+        task.last_completed_date !== currentDate
+    );
+    
+    // Reset them back to active
+    for (const task of dailyTasksToReset) {
+        await updateTask(task.id, {
+            list_type: 'active',
+            last_completed_date: null
+        });
+    }
+    
+    if (dailyTasksToReset.length > 0) {
+        await renderAllViews();
+    }
+}
+
+// Calculate completion percentage for daily reset tasks
+function calculateCompletionPercentage(task) {
+    if (!task.daily_reset || !task.created_at) {
+        return null;
+    }
+    
+    const createdDate = new Date(task.created_at);
+    const currentDate = getDenverTime();
+    
+    // Calculate days since creation
+    const daysSinceCreation = Math.floor((currentDate - createdDate) / (1000 * 60 * 60 * 24)) + 1;
+    
+    // Count completion days based on days_enabled
+    let eligibleDays = 0;
+    if (task.days_enabled) {
+        eligibleDays = daysSinceCreation;
+    } else {
+        // Count only the specified days of week since creation
+        const createdDayOfWeek = createdDate.getDay();
+        const daysMap = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+        const enabledDayNumbers = task.days.map(d => daysMap[d]);
+        
+        for (let i = 0; i < daysSinceCreation; i++) {
+            const checkDate = new Date(createdDate);
+            checkDate.setDate(checkDate.getDate() + i);
+            if (enabledDayNumbers.includes(checkDate.getDay())) {
+                eligibleDays++;
+            }
+        }
+    }
+    
+    const completionCount = task.completion_count || 0;
+    const percentage = eligibleDays > 0 ? Math.round((completionCount / eligibleDays) * 100) : 0;
+    
+    return { completionCount, eligibleDays, percentage };
+}
+
 // Render view
 function renderView(viewIndex) {
     const view = views[viewIndex];
@@ -195,6 +266,7 @@ function renderView(viewIndex) {
 // Render all views
 async function renderAllViews() {
     await loadTasks();
+    await checkDailyTaskResets();
     views.forEach((_, index) => renderView(index));
 }
 
@@ -211,7 +283,20 @@ function createTaskElement(task, listType, index, totalRecurring = 0) {
     
     if (listType === 'active') {
         div.addEventListener('click', async () => {
-            await updateTask(task.id, { list_type: 'done' });
+            if (task.daily_reset) {
+                // Daily reset tasks move to recurring (concurrent) and track completion
+                const currentDate = getDenverDateString();
+                const newCompletionCount = (task.completion_count || 0) + 1;
+                
+                await updateTask(task.id, {
+                    list_type: 'recurring',
+                    last_completed_date: currentDate,
+                    completion_count: newCompletionCount
+                });
+            } else {
+                // Regular tasks move to done
+                await updateTask(task.id, { list_type: 'done' });
+            }
             await renderAllViews();
         });
     }
@@ -314,11 +399,12 @@ editBtn.addEventListener('click', () => {
     taskNameInput.value = '';
     urgentCheckbox.checked = false;
     colorSelectContainer.style.display = 'block';
+    temporaryCheckbox.checked = false;
+    recurringCheckbox.checked = false;
     allDaysCheckbox.checked = true;
     daysSelectContainer.style.display = 'none';
     allTimeCheckbox.checked = true;
     timeSelectContainer.style.display = 'none';
-    document.querySelector('input[name="task-type"][value="oneoff"]').checked = true;
 });
 
 urgentCheckbox.addEventListener('change', () => {
@@ -339,7 +425,26 @@ saveTaskBtn.addEventListener('click', async () => {
     
     const isUrgent = urgentCheckbox.checked;
     const category = isUrgent ? 'urgent' : colorSelect.value;
-    const type = document.querySelector('input[name="task-type"]:checked').value;
+    
+    const isTemporary = temporaryCheckbox.checked;
+    const isRecurring = recurringCheckbox.checked;
+    const isDailyReset = isTemporary && isRecurring;
+    
+    // Determine type and list_type
+    let type, list_type;
+    if (isDailyReset) {
+        // Both checked: daily reset task starts on active
+        type = 'recurring';
+        list_type = 'active';
+    } else if (isRecurring) {
+        // Only recurring: goes to recurring list
+        type = 'recurring';
+        list_type = 'recurring';
+    } else {
+        // Only temporary or neither: goes to active as one-off
+        type = 'oneoff';
+        list_type = 'active';
+    }
     
     const days_enabled = allDaysCheckbox.checked;
     const days = days_enabled ? ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] : 
@@ -353,12 +458,16 @@ saveTaskBtn.addEventListener('click', async () => {
         name: name,
         category: category,
         type: type,
-        list_type: type === 'recurring' ? 'recurring' : 'active',
+        list_type: list_type,
+        daily_reset: isDailyReset,
+        completion_count: 0,
+        last_completed_date: null,
         days_enabled: days_enabled,
         days: days,
         time_enabled: time_enabled,
         start_time: start_time,
-        end_time: end_time
+        end_time: end_time,
+        created_at: new Date().toISOString()
     };
     
     await saveTask(newTask);
@@ -403,11 +512,21 @@ async function renderManageTasksList() {
         const daysText = task.days_enabled ? 'All days' : task.days.join(', ');
         const timeText = task.time_enabled ? 'All times' : `${task.start_time} - ${task.end_time}`;
         
+        let completionText = '';
+        if (task.daily_reset) {
+            const stats = calculateCompletionPercentage(task);
+            if (stats) {
+                completionText = `<p>Completion: ${stats.completionCount}/${stats.eligibleDays} days (${stats.percentage}%)</p>`;
+            }
+        }
+        
         item.innerHTML = `
             <h3 class="${task.category}">${task.name}</h3>
             <p>Category: ${task.category}</p>
             <p>Type: ${task.type}</p>
             <p>List: ${task.listType}</p>
+            ${task.daily_reset ? '<p>Daily Reset: Yes</p>' : ''}
+            ${completionText}
             <p>Days: ${daysText}</p>
             <p>Time: ${timeText}</p>
             <button class="secondary-btn delete-task-btn" data-id="${task.id}">Delete</button>
@@ -449,8 +568,10 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Refresh views every minute to update time-based visibility
-setInterval(renderAllViews, 60000);
+// Check for midnight resets every minute
+setInterval(async () => {
+    await renderAllViews();
+}, 60000);
 
 // Update clock every second
 setInterval(updateClock, 1000);
@@ -460,5 +581,5 @@ setInterval(updateClock, 1000);
     await renderAllViews();
     updatePositions();
     updateBackgroundColor();
-    updateClock(); // Initialize clock immediately
+    updateClock();
 })();
