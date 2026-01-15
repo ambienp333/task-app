@@ -142,6 +142,7 @@ async function saveTask(task) {
 // Update task in Supabase
 async function updateTask(taskId, updates) {
     const { error } = await supabaseClient
+        .from('tasks')
         .update(updates)
         .eq('id', taskId)
         .eq('user_id', userId);
