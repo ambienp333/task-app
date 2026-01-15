@@ -107,6 +107,78 @@
         </div>
     </div>
     
+    <!-- Edit Task Overlay -->
+    <div id="edit-task-overlay" class="overlay hidden">
+        <div class="overlay-content">
+            <h2>Edit Task</h2>
+            
+            <label>Task Name</label>
+            <input type="text" id="edit-task-name-input" placeholder="Enter task name">
+            
+            <label>
+                <input type="checkbox" id="edit-urgent-checkbox">
+                Urgent
+            </label>
+            
+            <div id="edit-color-select-container">
+                <label>Color</label>
+                <select id="edit-color-select">
+                    <option value="fitness">Fitness (Green)</option>
+                    <option value="academic">Academic (White)</option>
+                </select>
+            </div>
+            
+            <label>Type</label>
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" id="edit-temporary-checkbox">
+                    Temporary
+                </label>
+                <label>
+                    <input type="checkbox" id="edit-recurring-checkbox">
+                    Recurring
+                </label>
+            </div>
+            
+            <label>
+                <input type="checkbox" id="edit-all-days-checkbox" checked>
+                All days
+            </label>
+            
+            <div id="edit-days-select-container" style="display: none;">
+                <label>Days of week</label>
+                <div class="days-group">
+                    <label><input type="checkbox" name="edit-day" value="sun"> Sunday</label>
+                    <label><input type="checkbox" name="edit-day" value="mon"> Monday</label>
+                    <label><input type="checkbox" name="edit-day" value="tue"> Tuesday</label>
+                    <label><input type="checkbox" name="edit-day" value="wed"> Wednesday</label>
+                    <label><input type="checkbox" name="edit-day" value="thu"> Thursday</label>
+                    <label><input type="checkbox" name="edit-day" value="fri"> Friday</label>
+                    <label><input type="checkbox" name="edit-day" value="sat"> Saturday</label>
+                </div>
+            </div>
+            
+            <label>
+                <input type="checkbox" id="edit-all-time-checkbox" checked>
+                Show at all times
+            </label>
+            
+            <div id="edit-time-select-container" style="display: none;">
+                <label>Time range</label>
+                <div class="time-inputs">
+                    <input type="time" id="edit-start-time-input">
+                    <span>to</span>
+                    <input type="time" id="edit-end-time-input">
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button id="save-edit-btn" class="primary-btn">Save Changes</button>
+                <button id="cancel-edit-btn" class="secondary-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
     <div id="app">
         <div class="view-container" id="view-container">
             <div class="view" id="view-0" data-type="active">
