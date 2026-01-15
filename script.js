@@ -45,6 +45,7 @@ const saveTaskBtn = document.getElementById('save-task-btn');
 const manageTasksBtn = document.getElementById('manage-tasks-btn');
 const cancelAddBtn = document.getElementById('cancel-add-btn');
 const closeManageBtn = document.getElementById('close-manage-btn');
+const clockElement = document.getElementById('clock');
 
 // Denver timezone utilities
 function getDenverTime() {
@@ -79,6 +80,15 @@ function isTaskVisibleNow(task) {
     }
     
     return true;
+}
+
+// Update clock
+function updateClock() {
+    const time = getDenverTime();
+    const hours = time.getHours().toString().padStart(2, '0');
+    const minutes = time.getMinutes().toString().padStart(2, '0');
+    const seconds = time.getSeconds().toString().padStart(2, '0');
+    clockElement.textContent = `${hours}:${minutes}:${seconds}`;
 }
 
 // Load tasks from Supabase
@@ -423,9 +433,13 @@ document.addEventListener('keydown', (e) => {
 // Refresh views every minute to update time-based visibility
 setInterval(renderAllViews, 60000);
 
+// Update clock every second
+setInterval(updateClock, 1000);
+
 // Initialize
 (async () => {
     await renderAllViews();
     updatePositions();
     updateBackgroundColor();
+    updateClock(); // Initialize clock immediately
 })();
