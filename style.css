@@ -85,6 +85,16 @@ body {
 .task.fitness { color: #81c784; }
 .task.academic { color: #d4d4d4; }
 
+.clock {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    z-index: 100;
+}
+
 /* Desktop Edit Button */
 .edit-btn {
     display: none;
@@ -174,6 +184,7 @@ body {
 }
 
 .radio-group,
+.checkbox-group,
 .days-group {
     display: flex;
     flex-direction: column;
@@ -181,6 +192,7 @@ body {
 }
 
 .radio-group label,
+.checkbox-group label,
 .days-group label {
     margin: 0;
     display: flex;
@@ -188,6 +200,7 @@ body {
 }
 
 .radio-group input[type="radio"],
+.checkbox-group input[type="checkbox"],
 .days-group input[type="checkbox"] {
     margin-right: 8px;
 }
