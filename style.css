@@ -258,6 +258,41 @@ body {
     margin: 20px 0;
 }
 
+.category-section {
+    margin-bottom: 15px;
+}
+
+.category-header {
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    padding: 12px 15px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.2s;
+}
+
+.category-header:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.category-header span.urgent { color: #e57373; }
+.category-header span.fitness { color: #81c784; }
+.category-header span.academic { color: #ffb74d; }
+.category-header span.social { color: #b39ddb; }
+.category-header span.misc { color: #d4d4d4; }
+
+.collapse-icon {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+}
+
+.category-content {
+    margin-top: 5px;
+}
+
 .manage-task-item {
     background: #1e1e1e;
     border: 1px solid rgba(255, 255, 255, 0.2);
