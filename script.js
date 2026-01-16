@@ -641,6 +641,7 @@ async function renderManageTasksList() {
             <p>Days: ${daysText}</p>
             <p>Time: ${timeText}</p>
             <button class="secondary-btn edit-task-btn" data-id="${task.id}">Edit</button>
+            ${task.listType === 'done' ? '<button class="secondary-btn restore-task-btn" data-id="${task.id}" data-type="' + task.type + '" data-daily-reset="' + task.daily_reset + '">Move Back</button>' : ''}
             <button class="secondary-btn delete-task-btn" data-id="${task.id}">Delete</button>
         `;
         container.appendChild(item);
@@ -687,6 +688,35 @@ async function renderManageTasksList() {
             
             // Show edit overlay
             editTaskOverlay.classList.remove('hidden');
+        });
+    });
+    
+    // Add restore handlers for done tasks
+    document.querySelectorAll('.restore-task-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const taskId = e.target.dataset.id;
+            const taskType = e.target.dataset.type;
+            const isDailyReset = e.target.dataset.dailyReset === 'true';
+            
+            // Determine where to move it back to
+            let newListType;
+            if (isDailyReset) {
+                // Daily reset tasks go back to active
+                newListType = 'active';
+            } else if (taskType === 'recurring') {
+                // Regular recurring tasks go back to recurring
+                newListType = 'recurring';
+            } else {
+                // One-off tasks go back to active
+                newListType = 'active';
+            }
+            
+            await updateTask(taskId, { 
+                list_type: newListType,
+                completed_at: null  // Clear completion timestamp
+            });
+            await renderAllViews();
+            await renderManageTasksList();
         });
     });
     
