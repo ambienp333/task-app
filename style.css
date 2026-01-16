@@ -81,9 +81,11 @@ body {
     background-color: rgba(255, 255, 255, 0.05);
 }
 
-.task.urgent { color: #4fc3f7; }
+.task.urgent { color: #e57373; }
 .task.fitness { color: #81c784; }
-.task.academic { color: #d4d4d4; }
+.task.academic { color: #ffb74d; }
+.task.social { color: #b39ddb; }
+.task.misc { color: #d4d4d4; }
 
 .clock {
     position: fixed;
@@ -269,6 +271,12 @@ body {
     font-size: 16px;
 }
 
+.manage-task-item h3.urgent { color: #e57373; }
+.manage-task-item h3.fitness { color: #81c784; }
+.manage-task-item h3.academic { color: #ffb74d; }
+.manage-task-item h3.social { color: #b39ddb; }
+.manage-task-item h3.misc { color: #d4d4d4; }
+
 .manage-task-item p {
     margin: 5px 0;
     font-size: 12px;
@@ -293,3 +301,5 @@ body {
         font-size: 15px;
     }
 }
+
+/* LATEST VERSION - Updated with edit task functionality - 2026-01-15 */
