@@ -274,6 +274,17 @@ function calculateCompletionPercentage(task) {
     return { completionCount, eligibleDays, percentage };
 }
 
+// Shuffle array utility
+function shuffleArray(array) {
+    if (array.length === 0) return [];
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
 // Render view
 function renderView(viewIndex) {
     const view = views[viewIndex];
@@ -282,19 +293,23 @@ function renderView(viewIndex) {
     container.innerHTML = '';
     
     if (type === 'active') {
-        tasks.active.filter(isTaskVisibleNow).forEach((task, index) => {
+        const visibleActive = tasks.active.filter(isTaskVisibleNow);
+        const shuffled = shuffleArray(visibleActive);
+        shuffled.forEach((task, index) => {
             const taskEl = createTaskElement(task, 'active', index);
             container.appendChild(taskEl);
         });
     } else if (type === 'recurring') {
         const visibleRecurring = tasks.recurring.filter(isTaskVisibleNow);
-        const shuffled = shuffleRecurring(visibleRecurring);
+        const shuffled = shuffleArray(visibleRecurring);
         shuffled.forEach((task, index) => {
             const taskEl = createTaskElement(task, 'recurring', index, shuffled.length);
             container.appendChild(taskEl);
         });
     } else if (type === 'done') {
-        tasks.done.filter(isTaskVisibleNow).forEach((task, index) => {
+        const visibleDone = tasks.done.filter(isTaskVisibleNow);
+        const shuffled = shuffleArray(visibleDone);
+        shuffled.forEach((task, index) => {
             const taskEl = createTaskElement(task, 'done', index);
             container.appendChild(taskEl);
         });
@@ -307,12 +322,15 @@ async function renderAllViews() {
     await checkDailyTaskResets();
     views.forEach((_, index) => renderView(index));
 }
-
-// Create task element
 function createTaskElement(task, listType, index, totalRecurring = 0) {
     const div = document.createElement('div');
     div.className = `task ${task.category}`;
     div.textContent = task.name;
+    
+    // Grey out completed tasks
+    if (listType === 'done') {
+        div.style.color = '#666666';
+    }
     
     if (listType === 'recurring' && totalRecurring > 0) {
         const opacity = 1 - (index / totalRecurring) * 0.6;
@@ -364,17 +382,6 @@ function createTaskElement(task, listType, index, totalRecurring = 0) {
     }
     
     return div;
-}
-
-// Shuffle recurring
-function shuffleRecurring(recurringTasks) {
-    if (recurringTasks.length === 0) return [];
-    const shuffled = [...recurringTasks];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
 }
 
 // Get current visible view type
