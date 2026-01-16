@@ -652,6 +652,10 @@ async function renderManageTasksList() {
             }
         }
         
+        const restoreButton = task.listType === 'done' 
+            ? `<button class="secondary-btn restore-task-btn" data-id="${task.id}" data-type="${task.type}" data-daily-reset="${task.daily_reset}">Move Back</button>` 
+            : '';
+        
         item.innerHTML = `
             <h3 class="${task.category}">${task.name}</h3>
             <p>Category: ${task.category}</p>
@@ -662,7 +666,7 @@ async function renderManageTasksList() {
             <p>Days: ${daysText}</p>
             <p>Time: ${timeText}</p>
             <button class="secondary-btn edit-task-btn" data-id="${task.id}">Edit</button>
-            ${task.listType === 'done' ? '<button class="secondary-btn restore-task-btn" data-id="${task.id}" data-type="' + task.type + '" data-daily-reset="' + task.daily_reset + '">Move Back</button>' : ''}
+            ${restoreButton}
             <button class="secondary-btn delete-task-btn" data-id="${task.id}">Delete</button>
         `;
         container.appendChild(item);
