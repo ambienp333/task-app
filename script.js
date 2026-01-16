@@ -627,14 +627,15 @@ cancelEditBtn.addEventListener('click', () => {
     editTaskOverlay.classList.add('hidden');
 });
 
-// Close overlays when clicking outside the content
+// Close all overlays when clicking outside the content
 [addTaskOverlay, manageTasksOverlay, editTaskOverlay].forEach(overlay => {
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
-            overlay.classList.add('hidden');
-            if (overlay === editTaskOverlay) {
-                currentEditingTaskId = null;
-            }
+            // Close all overlays at once
+            addTaskOverlay.classList.add('hidden');
+            manageTasksOverlay.classList.add('hidden');
+            editTaskOverlay.classList.add('hidden');
+            currentEditingTaskId = null;
         }
     });
 });
