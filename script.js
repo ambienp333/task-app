@@ -320,25 +320,46 @@ function createTaskElement(task, listType, index, totalRecurring = 0) {
     }
     
     if (listType === 'active') {
+        let tapCount = 0;
+        let tapTimer = null;
+        
         div.addEventListener('click', async () => {
-            if (task.daily_reset) {
-                // Daily reset tasks move to recurring (concurrent) and track completion
-                const currentDate = getDenverDateString();
-                const newCompletionCount = (task.completion_count || 0) + 1;
+            tapCount++;
+            
+            if (tapCount === 1) {
+                // First tap - visual feedback
+                div.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
                 
-                await updateTask(task.id, {
-                    list_type: 'recurring',
-                    last_completed_date: currentDate,
-                    completion_count: newCompletionCount
-                });
-            } else {
-                // Regular tasks move to done and track completion time
-                await updateTask(task.id, { 
-                    list_type: 'done',
-                    completed_at: new Date().toISOString()
-                });
+                // Reset after 500ms
+                tapTimer = setTimeout(() => {
+                    tapCount = 0;
+                    div.style.backgroundColor = '';
+                }, 500);
+            } else if (tapCount === 2) {
+                // Second tap - complete the task
+                clearTimeout(tapTimer);
+                tapCount = 0;
+                div.style.backgroundColor = '';
+                
+                if (task.daily_reset) {
+                    // Daily reset tasks move to recurring (concurrent) and track completion
+                    const currentDate = getDenverDateString();
+                    const newCompletionCount = (task.completion_count || 0) + 1;
+                    
+                    await updateTask(task.id, {
+                        list_type: 'recurring',
+                        last_completed_date: currentDate,
+                        completion_count: newCompletionCount
+                    });
+                } else {
+                    // Regular tasks move to done and track completion time
+                    await updateTask(task.id, { 
+                        list_type: 'done',
+                        completed_at: new Date().toISOString()
+                    });
+                }
+                await renderAllViews();
             }
-            await renderAllViews();
         });
     }
     
