@@ -97,6 +97,16 @@ body {
     z-index: 100;
 }
 
+.view-label {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    z-index: 100;
+}
+
 /* Desktop Edit Button */
 .edit-btn {
     display: none;
