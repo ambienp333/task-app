@@ -48,6 +48,7 @@ const manageTasksBtn = document.getElementById('manage-tasks-btn');
 const cancelAddBtn = document.getElementById('cancel-add-btn');
 const closeManageBtn = document.getElementById('close-manage-btn');
 const clockElement = document.getElementById('clock');
+const viewLabelElement = document.getElementById('view-label');
 
 // Edit Task UI Elements
 const editTaskOverlay = document.getElementById('edit-task-overlay');
@@ -137,6 +138,17 @@ function updateClock() {
     const minutes = time.getMinutes().toString().padStart(2, '0');
     const seconds = time.getSeconds().toString().padStart(2, '0');
     clockElement.textContent = `${hours}:${minutes}:${seconds}`;
+}
+
+// Update view label
+function updateViewLabel() {
+    const type = getCurrentViewType();
+    const labels = {
+        'active': 'Active',
+        'recurring': 'Concurrent',
+        'done': 'Completed'
+    };
+    viewLabelElement.textContent = labels[type] || 'Active';
 }
 
 // Load tasks from Supabase
@@ -426,6 +438,7 @@ function cycleView() {
     currentViewIndex++;
     updatePositions();
     updateBackgroundColor();
+    updateViewLabel();
     
     setTimeout(() => {
         let hasRepositioned = false;
@@ -859,6 +872,7 @@ setInterval(updateClock, 1000);
     await renderAllViews();
     updatePositions();
     updateBackgroundColor();
+    updateViewLabel();
     updateClock();
 })();
 
