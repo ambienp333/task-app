@@ -646,11 +646,11 @@ async function renderManageTasksList() {
     
     // Group tasks by category
     const categories = {
-        urgent: { name: 'Urgent (Red)', tasks: [] },
-        fitness: { name: 'Fitness (Green)', tasks: [] },
-        academic: { name: 'Academic (Orange)', tasks: [] },
-        social: { name: 'Social (Lavender)', tasks: [] },
-        misc: { name: 'Misc (White)', tasks: [] }
+        urgent: { name: 'Urgent', tasks: [] },
+        fitness: { name: 'Fitness', tasks: [] },
+        academic: { name: 'Academic', tasks: [] },
+        social: { name: 'Social', tasks: [] },
+        misc: { name: 'Misc', tasks: [] }
     };
     
     allTasks.forEach(task => {
