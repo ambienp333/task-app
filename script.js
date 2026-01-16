@@ -644,39 +644,83 @@ async function renderManageTasksList() {
         return;
     }
     
-    allTasks.forEach((task) => {
-        const item = document.createElement('div');
-        item.className = 'manage-task-item';
-        
-        const daysText = task.days_enabled ? 'All days' : task.days.join(', ');
-        const timeText = task.time_enabled ? 'All times' : `${task.start_time} - ${task.end_time}`;
-        
-        let completionText = '';
-        if (task.daily_reset) {
-            const stats = calculateCompletionPercentage(task);
-            if (stats) {
-                completionText = `<p>Completion: ${stats.completionCount}/${stats.eligibleDays} days (${stats.percentage}%)</p>`;
-            }
+    // Group tasks by category
+    const categories = {
+        urgent: { name: 'Urgent (Red)', tasks: [] },
+        fitness: { name: 'Fitness (Green)', tasks: [] },
+        academic: { name: 'Academic (Orange)', tasks: [] },
+        social: { name: 'Social (Lavender)', tasks: [] },
+        misc: { name: 'Misc (White)', tasks: [] }
+    };
+    
+    allTasks.forEach(task => {
+        if (categories[task.category]) {
+            categories[task.category].tasks.push(task);
         }
+    });
+    
+    // Create collapsible sections for each category
+    Object.entries(categories).forEach(([categoryKey, categoryData]) => {
+        if (categoryData.tasks.length === 0) return;
         
-        const restoreButton = task.listType === 'done' 
-            ? `<button class="secondary-btn restore-task-btn" data-id="${task.id}" data-type="${task.type}" data-daily-reset="${task.daily_reset}">Move Back</button>` 
-            : '';
+        const section = document.createElement('div');
+        section.className = 'category-section';
         
-        item.innerHTML = `
-            <h3 class="${task.category}">${task.name}</h3>
-            <p>Category: ${task.category}</p>
-            <p>Type: ${task.type}</p>
-            <p>List: ${task.listType}</p>
-            ${task.daily_reset ? '<p>Daily Reset: Yes</p>' : ''}
-            ${completionText}
-            <p>Days: ${daysText}</p>
-            <p>Time: ${timeText}</p>
-            <button class="secondary-btn edit-task-btn" data-id="${task.id}">Edit</button>
-            ${restoreButton}
-            <button class="secondary-btn delete-task-btn" data-id="${task.id}">Delete</button>
+        const header = document.createElement('div');
+        header.className = 'category-header';
+        header.innerHTML = `
+            <span class="${categoryKey}">${categoryData.name} (${categoryData.tasks.length})</span>
+            <span class="collapse-icon">▼</span>
         `;
-        container.appendChild(item);
+        
+        const content = document.createElement('div');
+        content.className = 'category-content';
+        content.style.display = 'none';
+        
+        categoryData.tasks.forEach((task) => {
+            const item = document.createElement('div');
+            item.className = 'manage-task-item';
+            
+            const daysText = task.days_enabled ? 'All days' : task.days.join(', ');
+            const timeText = task.time_enabled ? 'All times' : `${task.start_time} - ${task.end_time}`;
+            
+            let completionText = '';
+            if (task.daily_reset) {
+                const stats = calculateCompletionPercentage(task);
+                if (stats) {
+                    completionText = `<p>Completion: ${stats.completionCount}/${stats.eligibleDays} days (${stats.percentage}%)</p>`;
+                }
+            }
+            
+            const restoreButton = task.listType === 'done' 
+                ? `<button class="secondary-btn restore-task-btn" data-id="${task.id}" data-type="${task.type}" data-daily-reset="${task.daily_reset}">Move Back</button>` 
+                : '';
+            
+            item.innerHTML = `
+                <h3 class="${task.category}">${task.name}</h3>
+                <p>Type: ${task.type}</p>
+                <p>List: ${task.listType}</p>
+                ${task.daily_reset ? '<p>Daily Reset: Yes</p>' : ''}
+                ${completionText}
+                <p>Days: ${daysText}</p>
+                <p>Time: ${timeText}</p>
+                <button class="secondary-btn edit-task-btn" data-id="${task.id}">Edit</button>
+                ${restoreButton}
+                <button class="secondary-btn delete-task-btn" data-id="${task.id}">Delete</button>
+            `;
+            content.appendChild(item);
+        });
+        
+        // Toggle collapse on header click
+        header.addEventListener('click', () => {
+            const isHidden = content.style.display === 'none';
+            content.style.display = isHidden ? 'block' : 'none';
+            header.querySelector('.collapse-icon').textContent = isHidden ? '▲' : '▼';
+        });
+        
+        section.appendChild(header);
+        section.appendChild(content);
+        container.appendChild(section);
     });
     
     // Add edit handlers
