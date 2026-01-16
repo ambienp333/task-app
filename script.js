@@ -213,7 +213,26 @@ async function checkDailyTaskResets() {
         });
     }
     
-    if (dailyTasksToReset.length > 0) {
+    // Delete completed non-recurring tasks older than 24 hours
+    const now = getDenverTime();
+    const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+    
+    const tasksToDelete = tasks.done.filter(task => {
+        if (task.type === 'recurring' || task.daily_reset) return false;
+        
+        // Check if task has been in done list for 24+ hours
+        if (task.completed_at) {
+            const completedTime = new Date(task.completed_at);
+            return completedTime < oneDayAgo;
+        }
+        return false;
+    });
+    
+    for (const task of tasksToDelete) {
+        await deleteTask(task.id);
+    }
+    
+    if (dailyTasksToReset.length > 0 || tasksToDelete.length > 0) {
         await renderAllViews();
     }
 }
@@ -313,8 +332,11 @@ function createTaskElement(task, listType, index, totalRecurring = 0) {
                     completion_count: newCompletionCount
                 });
             } else {
-                // Regular tasks move to done
-                await updateTask(task.id, { list_type: 'done' });
+                // Regular tasks move to done and track completion time
+                await updateTask(task.id, { 
+                    list_type: 'done',
+                    completed_at: new Date().toISOString()
+                });
             }
             await renderAllViews();
         });
@@ -720,3 +742,5 @@ setInterval(updateClock, 1000);
     updateBackgroundColor();
     updateClock();
 })();
+
+// LATEST VERSION - Updated with edit task functionality - 2026-01-15
