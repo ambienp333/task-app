@@ -99,7 +99,7 @@ body {
 
 .view-label {
     position: fixed;
-    bottom: 20px;
+    top: 45px;
     left: 20px;
     font-size: 18px;
     color: rgba(255, 255, 255, 0.5);
