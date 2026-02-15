@@ -208,6 +208,9 @@ async function deleteTask(taskId) {
 
 // Check and reset daily tasks at midnight
 async function checkDailyTaskResets() {
+    // Reload tasks from database first to get accurate completed_at times
+    await loadTasks();
+    
     const currentDate = getDenverDateString();
     
     // Find all daily reset tasks in recurring list
@@ -244,8 +247,9 @@ async function checkDailyTaskResets() {
         await deleteTask(task.id);
     }
     
+    // Only render if we made changes
     if (dailyTasksToReset.length > 0 || tasksToDelete.length > 0) {
-        await renderAllViews();
+        await loadTasks(); // Reload after deletions
     }
 }
 
@@ -330,8 +334,7 @@ function renderView(viewIndex) {
 
 // Render all views
 async function renderAllViews() {
-    await loadTasks();
-    await checkDailyTaskResets();
+    await checkDailyTaskResets(); // This now handles loading tasks
     views.forEach((_, index) => renderView(index));
 }
 function createTaskElement(task, listType, index, totalRecurring = 0) {
@@ -366,11 +369,15 @@ function createTaskElement(task, listType, index, totalRecurring = 0) {
                     div.style.backgroundColor = '';
                 }, 500);
             } else if (tapCount === 2) {
-                // Second tap - complete the task
+                // Second tap - IMMEDIATELY remove from DOM (optimistic update)
                 clearTimeout(tapTimer);
                 tapCount = 0;
                 div.style.backgroundColor = '';
                 
+                // Remove the element from the DOM instantly
+                div.remove();
+                
+                // Then update the server in the background
                 if (task.daily_reset) {
                     // Daily reset tasks move to recurring (concurrent) and track completion
                     const currentDate = getDenverDateString();
@@ -388,6 +395,8 @@ function createTaskElement(task, listType, index, totalRecurring = 0) {
                         completed_at: new Date().toISOString()
                     });
                 }
+                
+                // Refresh all views to sync with server
                 await renderAllViews();
             }
         });
