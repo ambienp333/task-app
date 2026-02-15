@@ -134,21 +134,28 @@ function isTaskVisibleNow(task) {
 // Update clock
 function updateClock() {
     const time = getDenverTime();
-    const hours = time.getHours().toString().padStart(2, '0');
+    let hours = time.getHours();
     const minutes = time.getMinutes().toString().padStart(2, '0');
     const seconds = time.getSeconds().toString().padStart(2, '0');
-    clockElement.textContent = `${hours}:${minutes}:${seconds}`;
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    
+    // Convert to 12-hour format
+    hours = hours % 12;
+    hours = hours ? hours : 12; // 0 should be 12
+    const hoursStr = hours.toString().padStart(2, '0');
+    
+    clockElement.textContent = `${hoursStr}:${minutes}:${seconds} [${ampm}]`;
 }
 
 // Update view label
 function updateViewLabel() {
     const type = getCurrentViewType();
     const labels = {
-        'active': 'Active',
-        'recurring': 'Concurrent',
-        'done': 'Completed'
+        'active': '[Active]',
+        'recurring': '[Concurrent]',
+        'done': '[Completed]'
     };
-    viewLabelElement.textContent = labels[type] || 'Active';
+    viewLabelElement.textContent = labels[type] || '[Active]';
 }
 
 // Load tasks from Supabase
