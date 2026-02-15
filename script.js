@@ -47,6 +47,9 @@ const saveTaskBtn = document.getElementById('save-task-btn');
 const manageTasksBtn = document.getElementById('manage-tasks-btn');
 const cancelAddBtn = document.getElementById('cancel-add-btn');
 const closeManageBtn = document.getElementById('close-manage-btn');
+const viewHistoryBtn = document.getElementById('view-history-btn');
+const taskHistoryOverlay = document.getElementById('task-history-overlay');
+const closeHistoryBtn = document.getElementById('close-history-btn');
 const clockElement = document.getElementById('clock');
 const viewLabelElement = document.getElementById('view-label');
 
@@ -586,6 +589,113 @@ closeManageBtn.addEventListener('click', () => {
     manageTasksOverlay.classList.add('hidden');
 });
 
+viewHistoryBtn.addEventListener('click', async () => {
+    await renderTaskHistory();
+    taskHistoryOverlay.classList.remove('hidden');
+});
+
+closeHistoryBtn.addEventListener('click', () => {
+    taskHistoryOverlay.classList.add('hidden');
+});
+
+// Render task history (all tasks ever created)
+async function renderTaskHistory() {
+    const container = document.getElementById('task-history-list');
+    container.innerHTML = '<p>Loading...</p>';
+    
+    // Fetch ALL tasks from database, including deleted ones
+    const { data, error } = await supabaseClient
+        .from('tasks')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+    
+    if (error) {
+        console.error('Error loading task history:', error);
+        container.innerHTML = '<p>Error loading task history.</p>';
+        return;
+    }
+    
+    container.innerHTML = '';
+    
+    if (data.length === 0) {
+        container.innerHTML = '<p>No tasks in history.</p>';
+        return;
+    }
+    
+    // Group by category
+    const categories = {
+        urgent: { name: 'Urgent', tasks: [] },
+        fitness: { name: 'Fitness', tasks: [] },
+        academic: { name: 'Academic', tasks: [] },
+        social: { name: 'Social', tasks: [] },
+        misc: { name: 'Misc', tasks: [] }
+    };
+    
+    data.forEach(task => {
+        if (categories[task.category]) {
+            categories[task.category].tasks.push(task);
+        }
+    });
+    
+    // Create collapsible sections
+    Object.entries(categories).forEach(([categoryKey, categoryData]) => {
+        if (categoryData.tasks.length === 0) return;
+        
+        const section = document.createElement('div');
+        section.className = 'category-section';
+        
+        const header = document.createElement('div');
+        header.className = 'category-header';
+        header.innerHTML = `
+            <span class="${categoryKey}">${categoryData.name} (${categoryData.tasks.length})</span>
+            <span class="collapse-icon">▼</span>
+        `;
+        
+        const content = document.createElement('div');
+        content.className = 'category-content';
+        content.style.display = 'none';
+        
+        categoryData.tasks.forEach((task) => {
+            const item = document.createElement('div');
+            item.className = 'manage-task-item';
+            
+            const createdDate = task.created_at ? new Date(task.created_at).toLocaleDateString() : 'Unknown';
+            const completedDate = task.completed_at ? new Date(task.completed_at).toLocaleDateString() : 'N/A';
+            
+            let completionText = '';
+            if (task.daily_reset) {
+                const stats = calculateCompletionPercentage(task);
+                if (stats) {
+                    completionText = `<p>Completion: ${stats.completionCount}/${stats.eligibleDays} days (${stats.percentage}%)</p>`;
+                }
+            }
+            
+            item.innerHTML = `
+                <h3 class="${task.category}">${task.name}</h3>
+                <p>Created: ${createdDate}</p>
+                <p>Type: ${task.type}</p>
+                <p>Current List: ${task.list_type}</p>
+                ${task.daily_reset ? '<p>Daily Reset: Yes</p>' : ''}
+                ${completionText}
+                ${task.completed_at ? `<p>Last Completed: ${completedDate}</p>` : ''}
+            `;
+            content.appendChild(item);
+        });
+        
+        // Toggle collapse
+        header.addEventListener('click', () => {
+            const isHidden = content.style.display === 'none';
+            content.style.display = isHidden ? 'block' : 'none';
+            header.querySelector('.collapse-icon').textContent = isHidden ? '▲' : '▼';
+        });
+        
+        section.appendChild(header);
+        section.appendChild(content);
+        container.appendChild(section);
+    });
+}
+
 editUrgentCheckbox.addEventListener('change', () => {
     editColorSelectContainer.style.display = editUrgentCheckbox.checked ? 'none' : 'block';
 });
@@ -657,13 +767,14 @@ cancelEditBtn.addEventListener('click', () => {
 });
 
 // Close all overlays when clicking outside the content
-[addTaskOverlay, manageTasksOverlay, editTaskOverlay].forEach(overlay => {
+[addTaskOverlay, manageTasksOverlay, editTaskOverlay, taskHistoryOverlay].forEach(overlay => {
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
             // Close all overlays at once
             addTaskOverlay.classList.add('hidden');
             manageTasksOverlay.classList.add('hidden');
             editTaskOverlay.classList.add('hidden');
+            taskHistoryOverlay.classList.add('hidden');
             currentEditingTaskId = null;
         }
     });
@@ -869,7 +980,8 @@ document.addEventListener('keydown', (e) => {
     if (e.code === 'Space' && 
         addTaskOverlay.classList.contains('hidden') && 
         manageTasksOverlay.classList.contains('hidden') &&
-        editTaskOverlay.classList.contains('hidden')) {
+        editTaskOverlay.classList.contains('hidden') &&
+        taskHistoryOverlay.classList.contains('hidden')) {
         e.preventDefault();
         cycleView();
     }
