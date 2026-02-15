@@ -106,7 +106,22 @@
             
             <div id="manage-tasks-list"></div>
             
-            <button id="close-manage-btn" class="secondary-btn">Close</button>
+            <div class="button-group">
+                <button id="view-history-btn" class="secondary-btn">View Task History</button>
+                <button id="close-manage-btn" class="secondary-btn">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Task History Overlay -->
+    <div id="task-history-overlay" class="overlay hidden">
+        <div class="overlay-content large">
+            <h2>Task History</h2>
+            <p style="opacity: 0.7; margin-bottom: 15px;">All tasks ever created, including deleted ones</p>
+            
+            <div id="task-history-list"></div>
+            
+            <button id="close-history-btn" class="secondary-btn">Close</button>
         </div>
     </div>
     
