@@ -1040,12 +1040,11 @@ setInterval(updateClock, 1000);
 
 // Initialize
 (async () => {
-    await renderAllViews();
-    
     // Start at a random view (0, 1, or 2 for active/recurring/done)
     const randomStart = Math.floor(Math.random() * 3);
     currentViewIndex = randomStart;
     
+    await renderAllViews();
     updatePositions();
     updateBackgroundColor();
     updateViewLabel();
