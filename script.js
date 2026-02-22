@@ -43,6 +43,9 @@ const allTimeCheckbox = document.getElementById('all-time-checkbox');
 const timeSelectContainer = document.getElementById('time-select-container');
 const startTimeInput = document.getElementById('start-time-input');
 const endTimeInput = document.getElementById('end-time-input');
+const hasExpirationCheckbox = document.getElementById('has-expiration-checkbox');
+const expirationSelectContainer = document.getElementById('expiration-select-container');
+const expirationDateInput = document.getElementById('expiration-date-input');
 const saveTaskBtn = document.getElementById('save-task-btn');
 const manageTasksBtn = document.getElementById('manage-tasks-btn');
 const cancelAddBtn = document.getElementById('cancel-add-btn');
@@ -67,6 +70,9 @@ const editAllTimeCheckbox = document.getElementById('edit-all-time-checkbox');
 const editTimeSelectContainer = document.getElementById('edit-time-select-container');
 const editStartTimeInput = document.getElementById('edit-start-time-input');
 const editEndTimeInput = document.getElementById('edit-end-time-input');
+const editHasExpirationCheckbox = document.getElementById('edit-has-expiration-checkbox');
+const editExpirationSelectContainer = document.getElementById('edit-expiration-select-container');
+const editExpirationDateInput = document.getElementById('edit-expiration-date-input');
 const saveEditBtn = document.getElementById('save-edit-btn');
 const cancelEditBtn = document.getElementById('cancel-edit-btn');
 
@@ -238,6 +244,19 @@ async function checkDailyTaskResets() {
         });
     }
     
+    // Check for expired tasks and move them to done
+    const expiredTasks = [...tasks.active, ...tasks.recurring].filter(task => {
+        if (!task.expiration_date) return false;
+        return task.expiration_date < currentDate;
+    });
+    
+    for (const task of expiredTasks) {
+        await updateTask(task.id, {
+            list_type: 'done',
+            completed_at: new Date().toISOString()
+        });
+    }
+    
     // Delete completed non-recurring tasks older than 24 hours
     const now = getDenverTime();
     const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
@@ -258,7 +277,7 @@ async function checkDailyTaskResets() {
     }
     
     // Only render if we made changes
-    if (dailyTasksToReset.length > 0 || tasksToDelete.length > 0) {
+    if (dailyTasksToReset.length > 0 || expiredTasks.length > 0 || tasksToDelete.length > 0) {
         await loadTasks(); // Reload after deletions
     }
 }
@@ -506,6 +525,9 @@ editBtn.addEventListener('click', () => {
     daysSelectContainer.style.display = 'none';
     allTimeCheckbox.checked = true;
     timeSelectContainer.style.display = 'none';
+    hasExpirationCheckbox.checked = false;
+    expirationSelectContainer.style.display = 'none';
+    expirationDateInput.value = '';
 });
 
 urgentCheckbox.addEventListener('change', () => {
@@ -518,6 +540,10 @@ allDaysCheckbox.addEventListener('change', () => {
 
 allTimeCheckbox.addEventListener('change', () => {
     timeSelectContainer.style.display = allTimeCheckbox.checked ? 'none' : 'block';
+});
+
+hasExpirationCheckbox.addEventListener('change', () => {
+    expirationSelectContainer.style.display = hasExpirationCheckbox.checked ? 'block' : 'none';
 });
 
 saveTaskBtn.addEventListener('click', async () => {
@@ -555,6 +581,9 @@ saveTaskBtn.addEventListener('click', async () => {
     const start_time = time_enabled ? null : startTimeInput.value;
     const end_time = time_enabled ? null : endTimeInput.value;
     
+    const has_expiration = hasExpirationCheckbox.checked;
+    const expiration_date = has_expiration ? expirationDateInput.value : null;
+    
     const newTask = {
         name: name,
         category: category,
@@ -568,6 +597,7 @@ saveTaskBtn.addEventListener('click', async () => {
         time_enabled: time_enabled,
         start_time: start_time,
         end_time: end_time,
+        expiration_date: expiration_date,
         created_at: new Date().toISOString()
     };
     
@@ -708,6 +738,10 @@ editAllTimeCheckbox.addEventListener('change', () => {
     editTimeSelectContainer.style.display = editAllTimeCheckbox.checked ? 'none' : 'block';
 });
 
+editHasExpirationCheckbox.addEventListener('change', () => {
+    editExpirationSelectContainer.style.display = editHasExpirationCheckbox.checked ? 'block' : 'none';
+});
+
 saveEditBtn.addEventListener('click', async () => {
     if (!currentEditingTaskId) return;
     
@@ -742,6 +776,9 @@ saveEditBtn.addEventListener('click', async () => {
     const start_time = time_enabled ? null : editStartTimeInput.value;
     const end_time = time_enabled ? null : editEndTimeInput.value;
     
+    const has_expiration = editHasExpirationCheckbox.checked;
+    const expiration_date = has_expiration ? editExpirationDateInput.value : null;
+    
     await updateTask(currentEditingTaskId, {
         name: name,
         category: category,
@@ -752,7 +789,8 @@ saveEditBtn.addEventListener('click', async () => {
         days: days,
         time_enabled: time_enabled,
         start_time: start_time,
-        end_time: end_time
+        end_time: end_time,
+        expiration_date: expiration_date
     });
     
     currentEditingTaskId = null;
@@ -803,6 +841,7 @@ async function renderManageTasksList() {
         fitness: { name: 'Fitness', tasks: [] },
         academic: { name: 'Academic', tasks: [] },
         social: { name: 'Social', tasks: [] },
+        coding: { name: 'Coding', tasks: [] },
         misc: { name: 'Misc', tasks: [] }
     };
     
@@ -915,6 +954,10 @@ async function renderManageTasksList() {
             editStartTimeInput.value = task.start_time || '';
             editEndTimeInput.value = task.end_time || '';
             
+            editHasExpirationCheckbox.checked = !!task.expiration_date;
+            editExpirationSelectContainer.style.display = task.expiration_date ? 'block' : 'none';
+            editExpirationDateInput.value = task.expiration_date || '';
+            
             // Show edit overlay
             editTaskOverlay.classList.remove('hidden');
         });
@@ -998,6 +1041,11 @@ setInterval(updateClock, 1000);
 // Initialize
 (async () => {
     await renderAllViews();
+    
+    // Start at a random view (0, 1, or 2 for active/recurring/done)
+    const randomStart = Math.floor(Math.random() * 3);
+    currentViewIndex = randomStart;
+    
     updatePositions();
     updateBackgroundColor();
     updateViewLabel();
