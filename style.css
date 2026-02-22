@@ -85,6 +85,7 @@ body {
 .task.fitness { color: #81c784; }
 .task.academic { color: #ffb74d; }
 .task.social { color: #b39ddb; }
+.task.coding { color: #64b5f6; }
 .task.misc { color: #d4d4d4; }
 
 .clock {
@@ -292,6 +293,7 @@ body {
 .category-header span.fitness { color: #81c784; }
 .category-header span.academic { color: #ffb74d; }
 .category-header span.social { color: #b39ddb; }
+.category-header span.coding { color: #64b5f6; }
 .category-header span.misc { color: #d4d4d4; }
 
 .collapse-icon {
@@ -320,6 +322,7 @@ body {
 .manage-task-item h3.fitness { color: #81c784; }
 .manage-task-item h3.academic { color: #ffb74d; }
 .manage-task-item h3.social { color: #b39ddb; }
+.manage-task-item h3.coding { color: #64b5f6; }
 .manage-task-item h3.misc { color: #d4d4d4; }
 
 .manage-task-item p {
