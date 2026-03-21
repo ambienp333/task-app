@@ -362,9 +362,9 @@ function renderView(viewIndex, shouldShuffle = false) {
 }
 
 // Render all views
-async function renderAllViews() {
+async function renderAllViews(shouldShuffle = false) {
     await checkDailyTaskResets(); // This now handles loading tasks
-    views.forEach((_, index) => renderView(index));
+    views.forEach((_, index) => renderView(index, shouldShuffle));
 }
 function createTaskElement(task, listType, index, totalRecurring = 0) {
     const div = document.createElement('div');
