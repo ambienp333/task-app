@@ -331,7 +331,7 @@ function shuffleArray(array) {
 }
 
 // Render view
-function renderView(viewIndex) {
+function renderView(viewIndex, shouldShuffle = false) {
     const view = views[viewIndex];
     const type = view.dataset.type;
     const container = document.getElementById(`tasks-${viewIndex}`);
@@ -339,22 +339,22 @@ function renderView(viewIndex) {
     
     if (type === 'active') {
         const visibleActive = tasks.active.filter(isTaskVisibleNow);
-        const shuffled = shuffleArray(visibleActive);
-        shuffled.forEach((task, index) => {
+        const tasksToRender = shouldShuffle ? shuffleArray(visibleActive) : visibleActive;
+        tasksToRender.forEach((task, index) => {
             const taskEl = createTaskElement(task, 'active', index);
             container.appendChild(taskEl);
         });
     } else if (type === 'recurring') {
         const visibleRecurring = tasks.recurring.filter(isTaskVisibleNow);
-        const shuffled = shuffleArray(visibleRecurring);
-        shuffled.forEach((task, index) => {
-            const taskEl = createTaskElement(task, 'recurring', index, shuffled.length);
+        const tasksToRender = shouldShuffle ? shuffleArray(visibleRecurring) : visibleRecurring;
+        tasksToRender.forEach((task, index) => {
+            const taskEl = createTaskElement(task, 'recurring', index, tasksToRender.length);
             container.appendChild(taskEl);
         });
     } else if (type === 'done') {
         const visibleDone = tasks.done.filter(isTaskVisibleNow);
-        const shuffled = shuffleArray(visibleDone);
-        shuffled.forEach((task, index) => {
+        const tasksToRender = shouldShuffle ? shuffleArray(visibleDone) : visibleDone;
+        tasksToRender.forEach((task, index) => {
             const taskEl = createTaskElement(task, 'done', index);
             container.appendChild(taskEl);
         });
@@ -474,6 +474,13 @@ function cycleView() {
     queuedSwipe = false;
     
     currentViewIndex++;
+    
+    // Shuffle the view we're about to see
+    const targetViewIndex = views.findIndex((_, i) => viewPositions[i] === currentViewIndex);
+    if (targetViewIndex !== -1) {
+        renderView(targetViewIndex, true); // true = shuffle
+    }
+    
     updatePositions();
     updateBackgroundColor();
     updateViewLabel();
@@ -519,7 +526,7 @@ editBtn.addEventListener('click', () => {
     taskNameInput.value = '';
     urgentCheckbox.checked = false;
     colorSelectContainer.style.display = 'block';
-    temporaryCheckbox.checked = false;
+    temporaryCheckbox.checked = true; // Default to checked
     recurringCheckbox.checked = false;
     allDaysCheckbox.checked = true;
     daysSelectContainer.style.display = 'none';
