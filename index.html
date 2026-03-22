@@ -119,7 +119,19 @@
         <div class="overlay-content large">
             <h2>Manage Tasks</h2>
             
+            <!-- Active/Daily Tasks -->
             <div id="manage-tasks-list"></div>
+            
+            <!-- Completed Tasks Collapsible -->
+            <div class="category-section" id="completed-section" style="margin-top: 20px;">
+                <div class="category-header" id="completed-header">
+                    <span style="color: #666666;">Completed</span>
+                    <span class="collapse-icon">▼</span>
+                </div>
+                <div class="category-content" id="completed-content" style="display: none;">
+                    <!-- Completed tasks will be rendered here -->
+                </div>
+            </div>
             
             <div class="button-group">
                 <button id="view-history-btn" class="secondary-btn">View Task History</button>
@@ -239,19 +251,19 @@
                 <div class="task-list" id="tasks-1"></div>
             </div>
             
-            <div class="view" id="view-2" data-type="done">
+            <div class="view" id="view-2" data-type="active">
                 <div class="task-list" id="tasks-2"></div>
             </div>
             
-            <div class="view" id="view-3" data-type="active">
+            <div class="view" id="view-3" data-type="daily">
                 <div class="task-list" id="tasks-3"></div>
             </div>
             
-            <div class="view" id="view-4" data-type="daily">
+            <div class="view" id="view-4" data-type="active">
                 <div class="task-list" id="tasks-4"></div>
             </div>
             
-            <div class="view" id="view-5" data-type="done">
+            <div class="view" id="view-5" data-type="daily">
                 <div class="task-list" id="tasks-5"></div>
             </div>
         </div>
