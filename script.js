@@ -10,7 +10,7 @@ const userId = 'abel_main_user';
 // State management
 let tasks = {
     active: [],
-    recurring: [],
+    daily: [],
     done: []
 };
 
@@ -23,7 +23,7 @@ const backgroundLayer = document.getElementById('background-layer');
 
 const backgroundColors = {
     'active': '#1e1e1f',
-    'recurring': '#251e21',
+    'daily': '#251e21',
     'done': '#2d1e1e'
 };
 
@@ -37,6 +37,7 @@ const colorSelectContainer = document.getElementById('color-select-container');
 const colorSelect = document.getElementById('color-select');
 const temporaryCheckbox = document.getElementById('temporary-checkbox');
 const recurringCheckbox = document.getElementById('recurring-checkbox');
+const dailyCheckbox = document.getElementById('daily-checkbox');
 const allDaysCheckbox = document.getElementById('all-days-checkbox');
 const daysSelectContainer = document.getElementById('days-select-container');
 const allTimeCheckbox = document.getElementById('all-time-checkbox');
@@ -64,6 +65,7 @@ const editColorSelectContainer = document.getElementById('edit-color-select-cont
 const editColorSelect = document.getElementById('edit-color-select');
 const editTemporaryCheckbox = document.getElementById('edit-temporary-checkbox');
 const editRecurringCheckbox = document.getElementById('edit-recurring-checkbox');
+const editDailyCheckbox = document.getElementById('edit-daily-checkbox');
 const editAllDaysCheckbox = document.getElementById('edit-all-days-checkbox');
 const editDaysSelectContainer = document.getElementById('edit-days-select-container');
 const editAllTimeCheckbox = document.getElementById('edit-all-time-checkbox');
@@ -161,7 +163,7 @@ function updateViewLabel() {
     const type = getCurrentViewType();
     const labels = {
         'active': '[Active]',
-        'recurring': '[Concurrent]',
+        'daily': '[Daily]',
         'done': '[Completed]'
     };
     viewLabelElement.textContent = labels[type] || '[Active]';
@@ -180,8 +182,8 @@ async function loadTasks() {
     }
     
     // Organize tasks by list_type
-    tasks.active = data.filter(t => t.list_type === 'active');
-    tasks.recurring = data.filter(t => t.list_type === 'recurring');
+    tasks.active = data.filter(t => t.list_type === 'active' || t.list_type === 'recurring');
+    tasks.daily = data.filter(t => t.list_type === 'daily');
     tasks.done = data.filter(t => t.list_type === 'done');
 }
 
@@ -229,23 +231,23 @@ async function checkDailyTaskResets() {
     
     const currentDate = getDenverDateString();
     
-    // Find all daily reset tasks in recurring list
-    const dailyTasksToReset = tasks.recurring.filter(task => 
+    // Find all daily reset tasks in active list (they now live there instead of recurring)
+    const dailyTasksToReset = tasks.active.filter(task => 
         task.daily_reset && 
         task.last_completed_date && 
         task.last_completed_date !== currentDate
     );
     
-    // Reset them back to active
+    // Note: daily reset tasks stay in active, they don't need to be moved
+    // They just need their last_completed_date cleared
     for (const task of dailyTasksToReset) {
         await updateTask(task.id, {
-            list_type: 'active',
             last_completed_date: null
         });
     }
     
     // Check for expired tasks and move them to done
-    const expiredTasks = [...tasks.active, ...tasks.recurring].filter(task => {
+    const expiredTasks = [...tasks.active, ...tasks.daily].filter(task => {
         if (!task.expiration_date) return false;
         return task.expiration_date < currentDate;
     });
@@ -262,7 +264,7 @@ async function checkDailyTaskResets() {
     const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
     
     const tasksToDelete = tasks.done.filter(task => {
-        if (task.type === 'recurring' || task.daily_reset) return false;
+        if (task.type === 'recurring' || task.type === 'daily' || task.daily_reset) return false;
         
         // Check if task has been in done list for 24+ hours
         if (task.completed_at) {
@@ -344,11 +346,11 @@ function renderView(viewIndex, shouldShuffle = false) {
             const taskEl = createTaskElement(task, 'active', index);
             container.appendChild(taskEl);
         });
-    } else if (type === 'recurring') {
-        const visibleRecurring = tasks.recurring.filter(isTaskVisibleNow);
-        const tasksToRender = shouldShuffle ? shuffleArray(visibleRecurring) : visibleRecurring;
+    } else if (type === 'daily') {
+        const visibleDaily = tasks.daily.filter(isTaskVisibleNow);
+        const tasksToRender = shouldShuffle ? shuffleArray(visibleDaily) : visibleDaily;
         tasksToRender.forEach((task, index) => {
-            const taskEl = createTaskElement(task, 'recurring', index, tasksToRender.length);
+            const taskEl = createTaskElement(task, 'daily', index, tasksToRender.length);
             container.appendChild(taskEl);
         });
     } else if (type === 'done') {
@@ -366,7 +368,7 @@ async function renderAllViews(shouldShuffle = false) {
     await checkDailyTaskResets(); // This now handles loading tasks
     views.forEach((_, index) => renderView(index, shouldShuffle));
 }
-function createTaskElement(task, listType, index, totalRecurring = 0) {
+function createTaskElement(task, listType, index, totalInList = 0) {
     const div = document.createElement('div');
     div.className = `task ${task.category}`;
     div.textContent = task.name;
@@ -376,12 +378,14 @@ function createTaskElement(task, listType, index, totalRecurring = 0) {
         div.style.color = '#666666';
     }
     
-    if (listType === 'recurring' && totalRecurring > 0) {
-        const opacity = 1 - (index / totalRecurring) * 0.6;
+    // Apply opacity fade for daily tasks (like old recurring)
+    if (listType === 'daily' && totalInList > 0) {
+        const opacity = 1 - (index / totalInList) * 0.6;
         div.style.opacity = opacity;
     }
     
-    if (listType === 'active') {
+    // Make active and daily tasks clickable
+    if (listType === 'active' || listType === 'daily') {
         let tapCount = 0;
         let tapTimer = null;
         
@@ -408,17 +412,16 @@ function createTaskElement(task, listType, index, totalRecurring = 0) {
                 
                 // Then update the server in the background
                 if (task.daily_reset) {
-                    // Daily reset tasks move to recurring (concurrent) and track completion
+                    // Daily reset tasks stay in active and track completion
                     const currentDate = getDenverDateString();
                     const newCompletionCount = (task.completion_count || 0) + 1;
                     
                     await updateTask(task.id, {
-                        list_type: 'recurring',
                         last_completed_date: currentDate,
                         completion_count: newCompletionCount
                     });
                 } else {
-                    // Regular tasks move to done and track completion time
+                    // Regular tasks and daily tasks move to done
                     await updateTask(task.id, { 
                         list_type: 'done',
                         completed_at: new Date().toISOString()
@@ -528,6 +531,7 @@ editBtn.addEventListener('click', () => {
     colorSelectContainer.style.display = 'block';
     temporaryCheckbox.checked = true; // Default to checked
     recurringCheckbox.checked = false;
+    dailyCheckbox.checked = false;
     allDaysCheckbox.checked = true;
     daysSelectContainer.style.display = 'none';
     allTimeCheckbox.checked = true;
@@ -562,18 +566,31 @@ saveTaskBtn.addEventListener('click', async () => {
     
     const isTemporary = temporaryCheckbox.checked;
     const isRecurring = recurringCheckbox.checked;
+    const isDaily = dailyCheckbox.checked;
     const isDailyReset = isTemporary && isRecurring;
     
     // Determine type and list_type
-    let type, list_type;
-    if (isDailyReset) {
-        // Both checked: daily reset task starts on active
+    let type, list_type, expiration_date_auto = null;
+    
+    if (isDaily) {
+        // Daily task: goes to daily list, expires at 4am next day
+        type = 'daily';
+        list_type = 'daily';
+        
+        // Calculate 4am tomorrow Denver time
+        const now = getDenverTime();
+        const tomorrow4am = new Date(now);
+        tomorrow4am.setDate(tomorrow4am.getDate() + 1);
+        tomorrow4am.setHours(4, 0, 0, 0);
+        expiration_date_auto = tomorrow4am.toISOString().split('T')[0];
+    } else if (isDailyReset) {
+        // Both temp and recurring checked: daily reset task starts on active
         type = 'recurring';
         list_type = 'active';
     } else if (isRecurring) {
-        // Only recurring: goes to recurring list
+        // Only recurring: goes to active (old recurring behavior)
         type = 'recurring';
-        list_type = 'recurring';
+        list_type = 'active';
     } else {
         // Only temporary or neither: goes to active as one-off
         type = 'oneoff';
@@ -589,7 +606,7 @@ saveTaskBtn.addEventListener('click', async () => {
     const end_time = time_enabled ? null : endTimeInput.value;
     
     const has_expiration = hasExpirationCheckbox.checked;
-    const expiration_date = has_expiration ? expirationDateInput.value : null;
+    const expiration_date = has_expiration ? expirationDateInput.value : expiration_date_auto;
     
     const newTask = {
         name: name,
@@ -760,16 +777,28 @@ saveEditBtn.addEventListener('click', async () => {
     
     const isTemporary = editTemporaryCheckbox.checked;
     const isRecurring = editRecurringCheckbox.checked;
+    const isDaily = editDailyCheckbox.checked;
     const isDailyReset = isTemporary && isRecurring;
     
     // Determine type and list_type
-    let type, list_type;
-    if (isDailyReset) {
+    let type, list_type, expiration_date_auto = null;
+    
+    if (isDaily) {
+        type = 'daily';
+        list_type = 'daily';
+        
+        // Calculate 4am tomorrow Denver time
+        const now = getDenverTime();
+        const tomorrow4am = new Date(now);
+        tomorrow4am.setDate(tomorrow4am.getDate() + 1);
+        tomorrow4am.setHours(4, 0, 0, 0);
+        expiration_date_auto = tomorrow4am.toISOString().split('T')[0];
+    } else if (isDailyReset) {
         type = 'recurring';
         list_type = 'active';
     } else if (isRecurring) {
         type = 'recurring';
-        list_type = 'recurring';
+        list_type = 'active';
     } else {
         type = 'oneoff';
         list_type = 'active';
@@ -784,7 +813,7 @@ saveEditBtn.addEventListener('click', async () => {
     const end_time = time_enabled ? null : editEndTimeInput.value;
     
     const has_expiration = editHasExpirationCheckbox.checked;
-    const expiration_date = has_expiration ? editExpirationDateInput.value : null;
+    const expiration_date = has_expiration ? editExpirationDateInput.value : expiration_date_auto;
     
     await updateTask(currentEditingTaskId, {
         name: name,
@@ -833,7 +862,7 @@ async function renderManageTasksList() {
     
     const allTasks = [
         ...tasks.active.map(t => ({...t, listType: 'active'})),
-        ...tasks.recurring.map(t => ({...t, listType: 'recurring'})),
+        ...tasks.daily.map(t => ({...t, listType: 'daily'})),
         ...tasks.done.map(t => ({...t, listType: 'done'}))
     ];
     
@@ -937,15 +966,22 @@ async function renderManageTasksList() {
             editColorSelect.value = task.category === 'urgent' ? 'fitness' : task.category;
             
             // Set type checkboxes based on task
-            if (task.daily_reset) {
+            if (task.type === 'daily') {
+                editTemporaryCheckbox.checked = false;
+                editRecurringCheckbox.checked = false;
+                editDailyCheckbox.checked = true;
+            } else if (task.daily_reset) {
                 editTemporaryCheckbox.checked = true;
                 editRecurringCheckbox.checked = true;
+                editDailyCheckbox.checked = false;
             } else if (task.type === 'recurring') {
                 editTemporaryCheckbox.checked = false;
                 editRecurringCheckbox.checked = true;
+                editDailyCheckbox.checked = false;
             } else {
                 editTemporaryCheckbox.checked = true;
                 editRecurringCheckbox.checked = false;
+                editDailyCheckbox.checked = false;
             }
             
             editAllDaysCheckbox.checked = task.days_enabled;
