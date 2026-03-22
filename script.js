@@ -23,8 +23,7 @@ const backgroundLayer = document.getElementById('background-layer');
 
 const backgroundColors = {
     'active': '#1e1e1f',
-    'daily': '#251e21',
-    'done': '#2d1e1e'
+    'daily': '#251e21'
 };
 
 // UI Elements
@@ -163,8 +162,7 @@ function updateViewLabel() {
     const type = getCurrentViewType();
     const labels = {
         'active': '[Active]',
-        'daily': '[Daily]',
-        'done': '[Completed]'
+        'daily': '[Daily]'
     };
     viewLabelElement.textContent = labels[type] || '[Active]';
 }
@@ -351,13 +349,6 @@ function renderView(viewIndex, shouldShuffle = false) {
         const tasksToRender = shouldShuffle ? shuffleArray(visibleDaily) : visibleDaily;
         tasksToRender.forEach((task, index) => {
             const taskEl = createTaskElement(task, 'daily', index, tasksToRender.length);
-            container.appendChild(taskEl);
-        });
-    } else if (type === 'done') {
-        const visibleDone = tasks.done.filter(isTaskVisibleNow);
-        const tasksToRender = shouldShuffle ? shuffleArray(visibleDone) : visibleDone;
-        tasksToRender.forEach((task, index) => {
-            const taskEl = createTaskElement(task, 'done', index);
             container.appendChild(taskEl);
         });
     }
@@ -858,19 +849,43 @@ cancelEditBtn.addEventListener('click', () => {
 async function renderManageTasksList() {
     await loadTasks();
     const container = document.getElementById('manage-tasks-list');
+    const completedContent = document.getElementById('completed-content');
     container.innerHTML = '';
+    completedContent.innerHTML = '';
     
-    const allTasks = [
+    // Separate active/daily from completed
+    const activeTasks = [
         ...tasks.active.map(t => ({...t, listType: 'active'})),
-        ...tasks.daily.map(t => ({...t, listType: 'daily'})),
-        ...tasks.done.map(t => ({...t, listType: 'done'}))
+        ...tasks.daily.map(t => ({...t, listType: 'daily'}))
     ];
     
-    if (allTasks.length === 0) {
-        container.innerHTML = '<p>No tasks yet.</p>';
-        return;
+    const completedTasks = tasks.done.map(t => ({...t, listType: 'done'}));
+    
+    // Render active/daily tasks in main section
+    if (activeTasks.length === 0) {
+        container.innerHTML = '<p>No active tasks.</p>';
+    } else {
+        renderTasksByCategory(activeTasks, container, false); // false = show edit/delete buttons
     }
     
+    // Render completed tasks in collapsible section
+    if (completedTasks.length > 0) {
+        renderTasksByCategory(completedTasks, completedContent, true); // true = completed section
+    } else {
+        completedContent.innerHTML = '<p>No completed tasks.</p>';
+    }
+    
+    // Setup completed section collapse toggle
+    const completedHeader = document.getElementById('completed-header');
+    completedHeader.onclick = () => {
+        const isHidden = completedContent.style.display === 'none';
+        completedContent.style.display = isHidden ? 'block' : 'none';
+        completedHeader.querySelector('.collapse-icon').textContent = isHidden ? '▲' : '▼';
+    };
+}
+
+// Helper function to render tasks grouped by category
+function renderTasksByCategory(taskList, container, isCompleted) {
     // Group tasks by category
     const categories = {
         urgent: { name: 'Urgent', tasks: [] },
@@ -881,7 +896,7 @@ async function renderManageTasksList() {
         misc: { name: 'Misc', tasks: [] }
     };
     
-    allTasks.forEach(task => {
+    taskList.forEach(task => {
         if (categories[task.category]) {
             categories[task.category].tasks.push(task);
         }
@@ -896,8 +911,9 @@ async function renderManageTasksList() {
         
         const header = document.createElement('div');
         header.className = 'category-header';
+        const headerColor = isCompleted ? 'style="color: #666666;"' : `class="${categoryKey}"`;
         header.innerHTML = `
-            <span class="${categoryKey}">${categoryData.name} (${categoryData.tasks.length})</span>
+            <span ${headerColor}>${categoryData.name} (${categoryData.tasks.length})</span>
             <span class="collapse-icon">▼</span>
         `;
         
@@ -920,21 +936,23 @@ async function renderManageTasksList() {
                 }
             }
             
-            const restoreButton = task.listType === 'done' 
-                ? `<button class="secondary-btn restore-task-btn" data-id="${task.id}" data-type="${task.type}" data-daily-reset="${task.daily_reset}">Move Back</button>` 
-                : '';
+            // Only show restore button for completed tasks, edit/delete for active
+            const buttons = isCompleted
+                ? `<button class="secondary-btn restore-task-btn" data-id="${task.id}" data-type="${task.type}" data-daily-reset="${task.daily_reset}">Move Back</button>
+                   <button class="secondary-btn delete-task-btn" data-id="${task.id}">Delete</button>`
+                : `<button class="secondary-btn edit-task-btn" data-id="${task.id}">Edit</button>
+                   <button class="secondary-btn delete-task-btn" data-id="${task.id}">Delete</button>`;
             
+            const taskColor = isCompleted ? 'style="color: #666666;"' : `class="${task.category}"`;
             item.innerHTML = `
-                <h3 class="${task.category}">${task.name}</h3>
+                <h3 ${taskColor}>${task.name}</h3>
                 <p>Type: ${task.type}</p>
                 <p>List: ${task.listType}</p>
                 ${task.daily_reset ? '<p>Daily Reset: Yes</p>' : ''}
                 ${completionText}
                 <p>Days: ${daysText}</p>
                 <p>Time: ${timeText}</p>
-                <button class="secondary-btn edit-task-btn" data-id="${task.id}">Edit</button>
-                ${restoreButton}
-                <button class="secondary-btn delete-task-btn" data-id="${task.id}">Delete</button>
+                ${buttons}
             `;
             content.appendChild(item);
         });
@@ -950,6 +968,18 @@ async function renderManageTasksList() {
         section.appendChild(content);
         container.appendChild(section);
     });
+    
+    // Re-attach event handlers for all buttons (both sections use same handlers)
+    attachManageTasksEventHandlers();
+}
+
+// Attach event handlers for manage tasks buttons
+function attachManageTasksEventHandlers() {
+    const allTasks = [
+        ...tasks.active.map(t => ({...t, listType: 'active'})),
+        ...tasks.daily.map(t => ({...t, listType: 'daily'})),
+        ...tasks.done.map(t => ({...t, listType: 'done'}))
+    ];
     
     // Add edit handlers
     document.querySelectorAll('.edit-task-btn').forEach(btn => {
@@ -1083,8 +1113,8 @@ setInterval(updateClock, 1000);
 
 // Initialize
 (async () => {
-    // Start at a random view (0, 1, or 2 for active/recurring/done)
-    const randomStart = Math.floor(Math.random() * 3);
+    // Start at a random view (0 or 1 for active/daily)
+    const randomStart = Math.floor(Math.random() * 2);
     currentViewIndex = randomStart;
     
     await renderAllViews();
