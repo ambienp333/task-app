@@ -26,14 +26,32 @@ const backgroundColors = {
     'daily': '#251e21'
 };
 
+// Symbol map
+const categorySymbols = {
+    'urgent': '⚠',
+    'fitness': '◆',
+    'academic': '▲',
+    'social': '◐',
+    'coding': '#',
+    'none': ''
+};
+
+// Generate random color for tasks
+function generateRandomColor() {
+    const hue = Math.floor(Math.random() * 360);
+    const saturation = 50 + Math.floor(Math.random() * 30); // 50-80%
+    const lightness = 60 + Math.floor(Math.random() * 20); // 60-80%
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+}
+
 // UI Elements
 const editBtn = document.getElementById('edit-btn');
 const addTaskOverlay = document.getElementById('add-task-overlay');
 const manageTasksOverlay = document.getElementById('manage-tasks-overlay');
 const taskNameInput = document.getElementById('task-name-input');
 const urgentCheckbox = document.getElementById('urgent-checkbox');
-const colorSelectContainer = document.getElementById('color-select-container');
-const colorSelect = document.getElementById('color-select');
+const symbolSelectContainer = document.getElementById('symbol-select-container');
+const symbolSelect = document.getElementById('symbol-select');
 const temporaryCheckbox = document.getElementById('temporary-checkbox');
 const recurringCheckbox = document.getElementById('recurring-checkbox');
 const dailyCheckbox = document.getElementById('daily-checkbox');
@@ -64,8 +82,8 @@ const viewLabelElement = document.getElementById('view-label');
 const editTaskOverlay = document.getElementById('edit-task-overlay');
 const editTaskNameInput = document.getElementById('edit-task-name-input');
 const editUrgentCheckbox = document.getElementById('edit-urgent-checkbox');
-const editColorSelectContainer = document.getElementById('edit-color-select-container');
-const editColorSelect = document.getElementById('edit-color-select');
+const editSymbolSelectContainer = document.getElementById('edit-symbol-select-container');
+const editSymbolSelect = document.getElementById('edit-symbol-select');
 const editTemporaryCheckbox = document.getElementById('edit-temporary-checkbox');
 const editRecurringCheckbox = document.getElementById('edit-recurring-checkbox');
 const editDailyCheckbox = document.getElementById('edit-daily-checkbox');
@@ -373,15 +391,18 @@ async function renderAllViews(shouldShuffle = false) {
 }
 function createTaskElement(task, listType, index, totalInList = 0) {
     const div = document.createElement('div');
-    div.className = `task ${task.category}`;
-    div.textContent = task.name;
+    div.className = `task`;
     
-    // Grey out completed tasks
+    // Add symbol prefix if task has a category symbol
+    const symbol = categorySymbols[task.category] || '';
+    div.textContent = symbol ? `${symbol} ${task.name}` : task.name;
+    
+    // Use task's random color, or grey for completed
     if (listType === 'done') {
         div.style.color = '#666666';
+    } else {
+        div.style.color = task.color || '#d4d4d4';
     }
-    
-    // No opacity fade for daily tasks anymore
     
     // Make active and daily tasks clickable
     if (listType === 'active' || listType === 'daily') {
@@ -541,7 +562,7 @@ editBtn.addEventListener('click', () => {
 });
 
 urgentCheckbox.addEventListener('change', () => {
-    colorSelectContainer.style.display = urgentCheckbox.checked ? 'none' : 'block';
+    symbolSelectContainer.style.display = urgentCheckbox.checked ? 'none' : 'block';
 });
 
 allDaysCheckbox.addEventListener('change', () => {
@@ -561,7 +582,8 @@ saveTaskBtn.addEventListener('click', async () => {
     if (!name) return;
     
     const isUrgent = urgentCheckbox.checked;
-    const category = isUrgent ? 'urgent' : colorSelect.value;
+    const category = isUrgent ? 'urgent' : symbolSelect.value;
+    const color = generateRandomColor(); // Generate random color for the task
     
     const isTemporary = temporaryCheckbox.checked;
     const isRecurring = recurringCheckbox.checked;
@@ -610,6 +632,7 @@ saveTaskBtn.addEventListener('click', async () => {
     const newTask = {
         name: name,
         category: category,
+        color: color,
         type: type,
         list_type: list_type,
         daily_reset: isDailyReset,
@@ -705,8 +728,11 @@ async function renderDailyArchive(dateString) {
             minute: '2-digit'
         });
         
+        const symbol = categorySymbols[task.category] || '';
+        const taskName = symbol ? `${symbol} ${task.name}` : task.name;
+        
         item.innerHTML = `
-            <h3 class="${task.category}">${task.name}</h3>
+            <h3 style="color: ${task.color || '#d4d4d4'};">${taskName}</h3>
             <p>Created at: ${createdTime}</p>
             <p>Type: ${task.type}</p>
             <p>Current Status: ${task.list_type}</p>
@@ -814,7 +840,7 @@ async function renderTaskHistory() {
 }
 
 editUrgentCheckbox.addEventListener('change', () => {
-    editColorSelectContainer.style.display = editUrgentCheckbox.checked ? 'none' : 'block';
+    editSymbolSelectContainer.style.display = editUrgentCheckbox.checked ? 'none' : 'block';
 });
 
 editAllDaysCheckbox.addEventListener('change', () => {
@@ -836,7 +862,7 @@ saveEditBtn.addEventListener('click', async () => {
     if (!name) return;
     
     const isUrgent = editUrgentCheckbox.checked;
-    const category = isUrgent ? 'urgent' : editColorSelect.value;
+    const category = isUrgent ? 'urgent' : editSymbolSelect.value;
     
     const isTemporary = editTemporaryCheckbox.checked;
     const isRecurring = editRecurringCheckbox.checked;
@@ -966,12 +992,16 @@ function renderTasksByCategory(taskList, container, isCompleted) {
         academic: { name: 'Academic', tasks: [] },
         social: { name: 'Social', tasks: [] },
         coding: { name: 'Coding', tasks: [] },
+        none: { name: 'Misc', tasks: [] },
         misc: { name: 'Misc', tasks: [] }
     };
     
     taskList.forEach(task => {
-        if (categories[task.category]) {
-            categories[task.category].tasks.push(task);
+        const cat = task.category || 'none';
+        if (categories[cat]) {
+            categories[cat].tasks.push(task);
+        } else if (cat === 'misc' || cat === 'none') {
+            categories['none'].tasks.push(task);
         }
     });
     
@@ -984,9 +1014,11 @@ function renderTasksByCategory(taskList, container, isCompleted) {
         
         const header = document.createElement('div');
         header.className = 'category-header';
-        const headerColor = isCompleted ? 'style="color: #666666;"' : `class="${categoryKey}"`;
+        const symbol = categorySymbols[categoryKey] || '';
+        const categoryLabel = symbol ? `${symbol} ${categoryData.name}` : categoryData.name;
+        const headerColor = isCompleted ? 'style="color: #666666;"' : '';
         header.innerHTML = `
-            <span ${headerColor}>${categoryData.name} (${categoryData.tasks.length})</span>
+            <span ${headerColor}>${categoryLabel} (${categoryData.tasks.length})</span>
             <span class="collapse-icon">▼</span>
         `;
         
@@ -1016,9 +1048,11 @@ function renderTasksByCategory(taskList, container, isCompleted) {
                 : `<button class="secondary-btn edit-task-btn" data-id="${task.id}">Edit</button>
                    <button class="secondary-btn delete-task-btn" data-id="${task.id}">Delete</button>`;
             
-            const taskColor = isCompleted ? 'style="color: #666666;"' : `class="${task.category}"`;
+            const taskSymbol = categorySymbols[task.category] || '';
+            const taskName = taskSymbol ? `${taskSymbol} ${task.name}` : task.name;
+            const taskColor = isCompleted ? 'style="color: #666666;"' : `style="color: ${task.color || '#d4d4d4'};"`;
             item.innerHTML = `
-                <h3 ${taskColor}>${task.name}</h3>
+                <h3 ${taskColor}>${taskName}</h3>
                 <p>Type: ${task.type}</p>
                 <p>List: ${task.listType}</p>
                 ${task.daily_reset ? '<p>Daily Reset: Yes</p>' : ''}
@@ -1065,8 +1099,8 @@ function attachManageTasksEventHandlers() {
             currentEditingTaskId = taskId;
             editTaskNameInput.value = task.name;
             editUrgentCheckbox.checked = task.category === 'urgent';
-            editColorSelectContainer.style.display = task.category === 'urgent' ? 'none' : 'block';
-            editColorSelect.value = task.category === 'urgent' ? 'fitness' : task.category;
+            editSymbolSelectContainer.style.display = task.category === 'urgent' ? 'none' : 'block';
+            editSymbolSelect.value = task.category === 'urgent' ? 'urgent' : task.category;
             
             // Set type checkboxes based on task
             if (task.type === 'daily') {
