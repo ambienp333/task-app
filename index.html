@@ -135,8 +135,24 @@
             
             <div class="button-group">
                 <button id="view-history-btn" class="secondary-btn">View Task History</button>
+                <button id="view-daily-archive-btn" class="secondary-btn">Daily Archive</button>
                 <button id="close-manage-btn" class="secondary-btn">Close</button>
             </div>
+        </div>
+    </div>
+    
+    <!-- Daily Archive Overlay -->
+    <div id="daily-archive-overlay" class="overlay hidden">
+        <div class="overlay-content large">
+            <h2>Daily Archive</h2>
+            <p style="opacity: 0.7; margin-bottom: 15px;">View all tasks created on a specific date</p>
+            
+            <label>Select Date</label>
+            <input type="date" id="archive-date-input" style="width: 100%; padding: 10px; background: #1e1e1e; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 4px; color: #d4d4d4; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 14px; margin-bottom: 20px;">
+            
+            <div id="daily-archive-list"></div>
+            
+            <button id="close-daily-archive-btn" class="secondary-btn">Close</button>
         </div>
     </div>
     
