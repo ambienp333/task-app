@@ -209,6 +209,13 @@ async function loadTasks() {
         return;
     }
     
+    // Add random colors to tasks that don't have them (old tasks)
+    data.forEach(task => {
+        if (!task.color) {
+            task.color = generateRandomColor();
+        }
+    });
+    
     // Organize tasks by list_type
     tasks.active = data.filter(t => t.list_type === 'active' || t.list_type === 'recurring');
     tasks.daily = data.filter(t => t.list_type === 'daily');
@@ -393,15 +400,18 @@ function createTaskElement(task, listType, index, totalInList = 0) {
     const div = document.createElement('div');
     div.className = `task`;
     
+    // Normalize category (handle old 'misc' or 'none' values)
+    const normalizedCategory = task.category === 'none' || !task.category ? 'misc' : task.category;
+    
     // Add symbol prefix if task has a category symbol
-    const symbol = categorySymbols[task.category] || '';
+    const symbol = categorySymbols[normalizedCategory] || '';
     div.textContent = symbol ? `${symbol} ${task.name}` : task.name;
     
     // Use task's random color, or grey for completed
     if (listType === 'done') {
         div.style.color = '#666666';
     } else {
-        div.style.color = task.color || '#d4d4d4';
+        div.style.color = task.color || generateRandomColor();
     }
     
     // Make active and daily tasks clickable
@@ -728,11 +738,13 @@ async function renderDailyArchive(dateString) {
             minute: '2-digit'
         });
         
-        const symbol = categorySymbols[task.category] || '';
+        const normalizedCategory = task.category === 'none' || !task.category ? 'misc' : task.category;
+        const symbol = categorySymbols[normalizedCategory] || '';
         const taskName = symbol ? `${symbol} ${task.name}` : task.name;
+        const taskColor = task.color || generateRandomColor();
         
         item.innerHTML = `
-            <h3 style="color: ${task.color || '#d4d4d4'};">${taskName}</h3>
+            <h3 style="color: ${taskColor};">${taskName}</h3>
             <p>Created at: ${createdTime}</p>
             <p>Type: ${task.type}</p>
             <p>Current Status: ${task.list_type}</p>
@@ -992,16 +1004,18 @@ function renderTasksByCategory(taskList, container, isCompleted) {
         academic: { name: 'Academic', tasks: [] },
         social: { name: 'Social', tasks: [] },
         coding: { name: 'Coding', tasks: [] },
-        none: { name: 'Misc', tasks: [] },
         misc: { name: 'Misc', tasks: [] }
     };
     
     taskList.forEach(task => {
-        const cat = task.category || 'none';
-        if (categories[cat]) {
-            categories[cat].tasks.push(task);
-        } else if (cat === 'misc' || cat === 'none') {
-            categories['none'].tasks.push(task);
+        const cat = task.category || 'misc';
+        // Map 'none' to 'misc'
+        const normalizedCat = cat === 'none' ? 'misc' : cat;
+        if (categories[normalizedCat]) {
+            categories[normalizedCat].tasks.push(task);
+        } else {
+            // Unknown category goes to misc
+            categories.misc.tasks.push(task);
         }
     });
     
@@ -1048,9 +1062,10 @@ function renderTasksByCategory(taskList, container, isCompleted) {
                 : `<button class="secondary-btn edit-task-btn" data-id="${task.id}">Edit</button>
                    <button class="secondary-btn delete-task-btn" data-id="${task.id}">Delete</button>`;
             
-            const taskSymbol = categorySymbols[task.category] || '';
+            const normalizedCategory = task.category === 'none' || !task.category ? 'misc' : task.category;
+            const taskSymbol = categorySymbols[normalizedCategory] || '';
             const taskName = taskSymbol ? `${taskSymbol} ${task.name}` : task.name;
-            const taskColor = isCompleted ? 'style="color: #666666;"' : `style="color: ${task.color || '#d4d4d4'};"`;
+            const taskColor = isCompleted ? 'style="color: #666666;"' : `style="color: ${task.color || generateRandomColor()};"`;
             item.innerHTML = `
                 <h3 ${taskColor}>${taskName}</h3>
                 <p>Type: ${task.type}</p>
