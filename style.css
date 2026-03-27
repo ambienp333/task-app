@@ -1,84 +1,84 @@
 * {
-margin: 0;
-padding: 0;
-box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 html, body {
-margin: 0;
-padding: 0;
-background-color: #1e1e1e;
+    margin: 0;
+    padding: 0;
+    background-color: #1e1e1e;
 }
 
 body {
-font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-color: #d4d4d4;
-overflow: hidden;
-height: 100vh;
-width: 100vw;
--webkit-user-select: none;
-user-select: none;
-position: fixed;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    color: #d4d4d4;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    -webkit-user-select: none;
+    user-select: none;
+    position: fixed;
 }
 
 #background-layer {
-position: fixed;
-top: 0;
-left: 0;
-width: 100%;
-height: 100%;
-background-color: #1f1e1e;
-transition: background-color 350ms cubic-bezier(0.4, 0.0, 0.2, 1);
-z-index: -1;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #1f1e1e;
+    transition: background-color 350ms cubic-bezier(0.4, 0.0, 0.2, 1);
+    z-index: -1;
 }
 
 #app {
-height: 100vh;
-width: 100vw;
-position: fixed;
-top: 0;
-left: 0;
-overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    position: fixed;
+    top: 0;
+    left: 0;
+    overflow: hidden;
 }
 
 .view-container {
-height: 100vh;
-width: 100%;
-position: relative;
+    height: 100vh;
+    width: 100%;
+    position: relative;
 }
 
 .view {
-height: 100vh;
-width: 100%;
-display: flex;
-flex-direction: column;
-justify-content: center;
-align-items: center;
-padding: 20px;
-position: absolute;
-top: 0;
-left: 0;
-transition: transform 350ms ease-in-out;
-background-color: transparent;
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transition: transform 350ms ease-in-out;
+    background-color: transparent;
 }
 
 .task-list {
-width: 100%;
-max-width: 600px;
+    width: 100%;
+    max-width: 600px;
 }
 
 .task {
-padding: 12px 16px;
-margin: 8px 0;
-border-radius: 6px;
-font-size: 16px;
-line-height: 1.5;
-cursor: pointer;
-transition: background-color 0.2s ease;
+    padding: 12px 16px;
+    margin: 8px 0;
+    border-radius: 6px;
+    font-size: 16px;
+    line-height: 1.5;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
 }
 
 .task:hover {
-background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(255, 255, 255, 0.05);
 }
 
 .task.urgent { color: #e57373; }
@@ -89,204 +89,204 @@ background-color: rgba(255, 255, 255, 0.05);
 .task.misc { color: #d4d4d4; }
 
 .clock {
-position: fixed;
-top: 20px;
-left: 20px;
-font-size: 18px;
-color: rgba(255, 255, 255, 0.5);
-font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-z-index: 100;
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    z-index: 100;
 }
 
 .view-label {
-position: fixed;
-top: 45px;
-left: 20px;
-font-size: 18px;
-color: rgba(255, 255, 255, 0.5);
-font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-z-index: 100;
+    position: fixed;
+    top: 45px;
+    left: 20px;
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    z-index: 100;
 }
 
 /* Desktop Edit Button */
 .edit-btn {
-display: none;
-position: fixed;
-top: 20px;
-right: 20px;
-background: rgba(255, 255, 255, 0.1);
-border: 1px solid rgba(255, 255, 255, 0.2);
-border-radius: 8px;
-padding: 12px;
-cursor: pointer;
-color: #d4d4d4;
-z-index: 100;
-transition: background 0.2s;
+    display: none;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+    cursor: pointer;
+    color: #d4d4d4;
+    z-index: 100;
+    transition: background 0.2s;
 }
 
 .edit-btn:hover {
-background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.15);
 }
 
 .edit-btn svg {
-display: block;
+    display: block;
 }
 
 /* Overlays */
 .overlay {
-position: fixed;
-top: 0;
-left: 0;
-width: 100%;
-height: 100%;
-background: rgba(0, 0, 0, 0.8);
-display: flex;
-justify-content: center;
-align-items: center;
-z-index: 200;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 200;
 }
 
 .overlay.hidden {
-display: none;
+    display: none;
 }
 
 .overlay-content {
-background: #2a2a2a;
-border: 1px solid rgba(255, 255, 255, 0.2);
-border-radius: 8px;
-padding: 30px;
-width: 90%;
-max-width: 500px;
-max-height: 80vh;
-overflow-y: auto;
+    background: #2a2a2a;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 30px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
 }
 
 .overlay-content.large {
-max-width: 800px;
+    max-width: 800px;
 }
 
 .overlay-content h2 {
-margin-bottom: 20px;
-color: #d4d4d4;
-font-size: 20px;
+    margin-bottom: 20px;
+    color: #d4d4d4;
+    font-size: 20px;
 }
 
 .overlay-content label {
-display: block;
-margin-top: 15px;
-margin-bottom: 5px;
-color: #d4d4d4;
-font-size: 14px;
+    display: block;
+    margin-top: 15px;
+    margin-bottom: 5px;
+    color: #d4d4d4;
+    font-size: 14px;
 }
 
 .overlay-content input[type="text"],
 .overlay-content input[type="time"],
 .overlay-content select {
-width: 100%;
-padding: 10px;
-background: #1e1e1e;
-border: 1px solid rgba(255, 255, 255, 0.2);
-border-radius: 4px;
-color: #d4d4d4;
-font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-font-size: 14px;
+    width: 100%;
+    padding: 10px;
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: #d4d4d4;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 14px;
 }
 
 .overlay-content input[type="checkbox"] {
-margin-right: 8px;
+    margin-right: 8px;
 }
 
 .radio-group,
 .checkbox-group,
 .days-group {
-display: flex;
-flex-direction: column;
-gap: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .radio-group label,
 .checkbox-group label,
 .days-group label {
-margin: 0;
-display: flex;
-align-items: center;
+    margin: 0;
+    display: flex;
+    align-items: center;
 }
 
 .radio-group input[type="radio"],
 .checkbox-group input[type="checkbox"],
 .days-group input[type="checkbox"] {
-margin-right: 8px;
+    margin-right: 8px;
 }
 
 .time-inputs {
-display: flex;
-align-items: center;
-gap: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .time-inputs input {
-flex: 1;
+    flex: 1;
 }
 
 .button-group {
-display: flex;
-gap: 10px;
-margin-top: 20px;
-flex-wrap: wrap;
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
 }
 
 .primary-btn,
 .secondary-btn {
-padding: 10px 20px;
-border: 1px solid rgba(255, 255, 255, 0.2);
-border-radius: 4px;
-cursor: pointer;
-font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-font-size: 14px;
-transition: background 0.2s;
+    padding: 10px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 14px;
+    transition: background 0.2s;
 }
 
 .primary-btn {
-background: rgba(79, 195, 247, 0.2);
-color: #4fc3f7;
+    background: rgba(79, 195, 247, 0.2);
+    color: #4fc3f7;
 }
 
 .primary-btn:hover {
-background: rgba(79, 195, 247, 0.3);
+    background: rgba(79, 195, 247, 0.3);
 }
 
 .secondary-btn {
-background: rgba(255, 255, 255, 0.1);
-color: #d4d4d4;
+    background: rgba(255, 255, 255, 0.1);
+    color: #d4d4d4;
 }
 
 .secondary-btn:hover {
-background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.15);
 }
 
 /* Manage Tasks List */
 #manage-tasks-list {
-margin: 20px 0;
+    margin: 20px 0;
 }
 
 .category-section {
-margin-bottom: 15px;
+    margin-bottom: 15px;
 }
 
 .category-header {
-background: #1e1e1e;
-border: 1px solid rgba(255, 255, 255, 0.2);
-border-radius: 4px;
-padding: 12px 15px;
-cursor: pointer;
-display: flex;
-justify-content: space-between;
-align-items: center;
-transition: background 0.2s;
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    padding: 12px 15px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.2s;
 }
 
 .category-header:hover {
-background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .category-header span.urgent { color: #e57373; }
@@ -297,25 +297,25 @@ background: rgba(255, 255, 255, 0.05);
 .category-header span.misc { color: #d4d4d4; }
 
 .collapse-icon {
-color: rgba(255, 255, 255, 0.5);
-font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
 }
 
 .category-content {
-margin-top: 5px;
+    margin-top: 5px;
 }
 
 .manage-task-item {
-background: #1e1e1e;
-border: 1px solid rgba(255, 255, 255, 0.2);
-border-radius: 4px;
-padding: 15px;
-margin-bottom: 10px;
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 10px;
 }
 
 .manage-task-item h3 {
-margin: 0 0 10px 0;
-font-size: 16px;
+    margin: 0 0 10px 0;
+    font-size: 16px;
 }
 
 .manage-task-item h3.urgent { color: #e57373; }
@@ -326,28 +326,28 @@ font-size: 16px;
 .manage-task-item h3.misc { color: #d4d4d4; }
 
 .manage-task-item p {
-margin: 5px 0;
-font-size: 12px;
-opacity: 0.7;
+    margin: 5px 0;
+    font-size: 12px;
+    opacity: 0.7;
 }
 
 .manage-task-item button {
-margin-top: 10px;
-margin-right: 10px;
+    margin-top: 10px;
+    margin-right: 10px;
 }
 
 /* Desktop-only styles */
 @media screen and (min-width: 768px) {
-.edit-btn {
-display: block;
-}
+    .edit-btn {
+        display: block;
+    }
 }
 
 /* iPhone 13 specific adjustments */
 @media screen and (max-width: 390px) {
-.task {
-font-size: 15px;
-}
+    .task {
+        font-size: 15px;
+    }
 }
 
 /* LATEST VERSION - Updated with edit task functionality - 2026-01-15 */
