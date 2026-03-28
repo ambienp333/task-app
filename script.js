@@ -292,6 +292,36 @@ async function checkDailyTaskResets() {
     if (dailyTasksToReset.length > 0 || expiredTasks.length > 0 || tasksToDelete.length > 0) {
         await loadTasks(); // Reload after deletions
     }
+    
+    // Check for tasks that should become "dread"
+    await checkDreadTasks();
+}
+
+// Auto-swap tasks to "dread" if incomplete for >5 days
+async function checkDreadTasks() {
+    const now = getDenverTime();
+    const fiveDaysAgo = new Date(now.getTime() - (5 * 24 * 60 * 60 * 1000));
+    
+    const tasksToSwap = tasks.active.filter(task => {
+        // Only affect one-off (temporary) tasks, not recurring or daily reset
+        if (task.type !== 'oneoff' || task.daily_reset) return false;
+        
+        // Already dread, skip
+        if (task.category === 'dread') return false;
+        
+        // Check if created more than 5 days ago
+        if (!task.created_at) return false;
+        const createdTime = new Date(task.created_at);
+        return createdTime < fiveDaysAgo;
+    });
+    
+    for (const task of tasksToSwap) {
+        await updateTask(task.id, { category: 'dread' });
+    }
+    
+    if (tasksToSwap.length > 0) {
+        await loadTasks();
+    }
 }
 
 // Calculate completion percentage for daily reset tasks
@@ -371,6 +401,7 @@ async function renderAllViews(shouldShuffle = false) {
     await checkDailyTaskResets(); // This now handles loading tasks
     views.forEach((_, index) => renderView(index, shouldShuffle));
 }
+
 function createTaskElement(task, listType, index, totalInList = 0) {
     const div = document.createElement('div');
     div.className = `task ${task.category}`;
@@ -743,9 +774,11 @@ async function renderTaskHistory() {
     // Group by category
     const categories = {
         urgent: { name: 'Urgent', tasks: [] },
+        dread: { name: 'Dread', tasks: [] },
         fitness: { name: 'Fitness', tasks: [] },
         academic: { name: 'Academic', tasks: [] },
         social: { name: 'Social', tasks: [] },
+        coding: { name: 'Coding', tasks: [] },
         misc: { name: 'Misc', tasks: [] }
     };
     
@@ -962,6 +995,7 @@ function renderTasksByCategory(taskList, container, isCompleted) {
     // Group tasks by category
     const categories = {
         urgent: { name: 'Urgent', tasks: [] },
+        dread: { name: 'Dread', tasks: [] },
         fitness: { name: 'Fitness', tasks: [] },
         academic: { name: 'Academic', tasks: [] },
         social: { name: 'Social', tasks: [] },
@@ -1197,5 +1231,3 @@ setInterval(updateClock, 1000);
     updateViewLabel();
     updateClock();
 })();
-
-// LATEST VERSION - Updated with edit task functionality - 2026-01-15
